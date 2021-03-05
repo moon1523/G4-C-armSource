@@ -1,0 +1,13 @@
+/run/verbose 1
+/tracking/verbose 2
+
+/run/initialize
+
+/gun/particle  gamma
+/source/energy 100
+/source/filter 0.2
+/source/lpos   1000
+/source/lrot   90
+/source/crot   90
+/source/cang   0
+/run/beamOn    100
