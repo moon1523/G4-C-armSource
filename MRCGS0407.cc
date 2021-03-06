@@ -23,41 +23,92 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-//
-/// \file exampleB1.cc
-/// \brief Main program of the B1 example
+//  Author: Sungho Moon (2021.03.05)
+//  
+/// \file MRCGS0407.cc
+/// \brief main source
 
-#include "include/ActionInitialization.hh"
-#include "include/DetectorConstruction.hh"
 
+
+#include "G4UImanager.hh"
 #ifdef G4MULTITHREADED
 #include "G4MTRunManager.hh"
 #else
 #include "G4RunManager.hh"
 #endif
 
-#include "G4UImanager.hh"
-#include "QBBC.hh"
+#include "DetectorConstruction.hh"
+#include "FTFP_BERT.hh"
+#include "G4StepLimiterPhysics.hh"
+#include "ActionInitialization.hh"
 
+#include "TETModelImport.hh"
+#include "CarmTracking.hh"
+
+#include "G4Timer.hh"
 #include "G4VisExecutive.hh"
 #include "G4UIExecutive.hh"
 
 #include "Randomize.hh"
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+void PrintUsage(){
+  G4cerr<< "Usage: ./TetCal -m [MACRO] -o [OUTPUT] -p [phantom name]"  <<G4endl;
+  G4cerr<< "Example: ./TetCal -m sample.in -o run.out -p ./phantoms/00M" <<G4endl;
+}
 
 int main(int argc,char** argv)
 {
-  // Detect interactive mode (if no arguments) and define UI session
-  //
-  G4UIExecutive* ui = 0;
-  if ( argc == 1 ) {
-    ui = new G4UIExecutive(argc, argv);
-  }
+  // Read the arguments for batch mode
+	//
+    G4Timer* initTimer = new G4Timer;
+    initTimer->Start();
+    G4String macro;
+    G4String output;
+    G4String phantomName;
+    G4UIExecutive* ui = 0;
 
-  // Optionally: choose a different Random engine...
-  // G4Random::setTheEngine(new CLHEP::MTwistEngine);
+
+  for ( G4int i=1; i<argc; i++ ) {
+		// macro file name
+		if ( G4String(argv[i]) == "-m" ) {
+			macro = argv[i+1];
+			i++;
+		}
+		// output file name
+		else if ( G4String(argv[i]) == "-o" ) {
+			output = argv[i+1];
+			i++;
+		}
+		// switch for MRCP-AF phantom
+		else if ( G4String(argv[i]) == "-p" ) {
+			phantomName = argv[i+1];
+			i++;
+		}
+		else {
+			PrintUsage();
+			return 1;
+		}
+	}
+
+  // print usage when there are more than six arguments
+	if ( argc>7 || macro.empty() || phantomName.empty()){
+		PrintUsage();
+		return 1;
+	}
   
+  // Detect interactive mode (if no macro file name) and define UI session
+	//
+	if ( !macro.size() ) {
+		ui = new G4UIExecutive(argc, argv, "csh");
+		G4cerr<<"ERROR: Interactive mode is not available. Please provide macro file."<<G4endl;
+		return 1;
+	}
+
+  // Choose the Random engine
+	//
+	G4Random::setTheEngine(new CLHEP::RanecuEngine);
+	G4Random::setTheSeed(time(0));
+
   // Construct the default run manager
   //
 #ifdef G4MULTITHREADED
@@ -66,24 +117,23 @@ int main(int argc,char** argv)
   G4RunManager* runManager = new G4RunManager;
 #endif
 
+  // Set a class to import phantom data
+  //
+  TETModelImport* tetdata = new TETModelImport(phantomName, ui);
+
   // Set mandatory initialization classes
   //
-  // Detector construction
   runManager->SetUserInitialization(new DetectorConstruction());
-
-  // Physics list
-  G4VModularPhysicsList* physicsList = new QBBC;
-  physicsList->SetVerboseLevel(1);
+  G4VModularPhysicsList* physicsList = new FTFP_BERT;
+  physicsList->RegisterPhysics(new G4StepLimiterPhysics());
+  CarmTracking* carm = new CarmTracking();
   runManager->SetUserInitialization(physicsList);
-    
-  // User action initialization
-  runManager->SetUserInitialization(new ActionInitialization());
+  runManager->SetUserInitialization(new ActionInitialization(carm));
+  
   
   // Initialize visualization
   //
-  G4VisManager* visManager = new G4VisExecutive;
-  // G4VisExecutive can take a verbosity argument - see /vis/verbose guidance.
-  // G4VisManager* visManager = new G4VisExecutive("Quiet");
+  G4VisManager* visManager = new G4VisExecutive("Quiet");
   visManager->Initialize();
 
   // Get the pointer to the User Interface manager
@@ -94,8 +144,7 @@ int main(int argc,char** argv)
   if ( ! ui ) { 
     // batch mode
     G4String command = "/control/execute ";
-    G4String fileName = argv[1];
-    UImanager->ApplyCommand(command+fileName);
+    UImanager->ApplyCommand(command+macro);
   }
   else { 
     // interactive mode
@@ -112,5 +161,3 @@ int main(int argc,char** argv)
   delete visManager;
   delete runManager;
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo.....

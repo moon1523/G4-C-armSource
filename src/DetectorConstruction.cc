@@ -53,29 +53,23 @@
 
 using namespace std;
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 DetectorConstruction::DetectorConstruction()
 : G4VUserDetectorConstruction()
 {
 
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 DetectorConstruction::~DetectorConstruction()
 {
 
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 G4VPhysicalVolume* DetectorConstruction::Construct()
 {  
 	G4Material* AIR = G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR");
 	G4Material* WATER = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
 	// World
-	G4VSolid* sol_World = new G4Box("World", 1.0*m, 1.0*m, 1.0*m);
+	G4VSolid* sol_World = new G4Box("World", 10.0*m, 10.0*m, 10.0*m);
 	G4LogicalVolume* lv_World = new G4LogicalVolume(sol_World, AIR, "World");
 	G4VPhysicalVolume* pv_World =
 	new G4PVPlacement(0, G4ThreeVector(0.0, 0.0, 0.0), lv_World, "World", 0, false, 0);
@@ -85,7 +79,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	G4LogicalVolume* lv_Tet = new G4LogicalVolume(sol_Tet, WATER, "Tet");
 	//G4LogicalVolume* lv_Tet1 = new G4LogicalVolume(sol_Tet1, WATER, "Tet1");
 
-	//	G4PVPlacement* phy_Tet = new G4PVPlacement(0, G4ThreeVector(0.0, 0.0, 0.0), lv_Tet, "Tet", lv_World, false, 1);
+	//G4PVPlacement* phy_Tet = new G4PVPlacement(0, G4ThreeVector(0.0, 0.0, 0.0), lv_Tet, "Tet", lv_World, false, 1);
 	//G4VPVParameterisation* chamberParam = new ChamberParameterisation();
 	//G4PVParameterised* pv_Tet = new G4PVParameterised("para",lv_Tet, lv_World, kXAxis, 3, chamberParam);
 	//G4PVParameterised* pv_Tet1 = new G4PVParameterised("para1",lv_Tet1, lv_World, kXAxis, 3, chamberParam); //dksehlsek
@@ -111,5 +105,3 @@ void DetectorConstruction::ConstructSDandField()
 	fMFD->RegisterPrimitive(new G4PSEnergyDeposit("TetDose"));
 	G4SDManager::GetSDMpointer()->AddNewDetector(fMFD);
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

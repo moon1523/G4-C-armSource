@@ -27,42 +27,21 @@
 /// \file PrimaryGeneratorAction.cc
 /// \brief Implementation of the PrimaryGeneratorAction class
 
-#include "G4LogicalVolumeStore.hh"
-#include "G4LogicalVolume.hh"
-#include "G4Box.hh"
-#include "G4RunManager.hh"
-#include "G4ParticleGun.hh"
-#include "G4ParticleTable.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4SystemOfUnits.hh"
-#include "Randomize.hh"
-#include "G4Event.hh"
-#include "../include/PrimaryGeneratorAction.hh"
-#include "G4RandomDirection.hh"
-#include <cstdlib>
-#include <ctime>
-#include <cmath>
-#include <vector>
-#include <tuple>
-#include "G4RotationMatrix.hh"
-#include <iomanip>
-using namespace std;
+#include "PrimaryGeneratorAction.hh"
 
-
-PrimaryGeneratorAction::PrimaryGeneratorAction()
-: G4VUserPrimaryGeneratorAction(), peak_energy("100"), filter_thickness("0.2"),
-  	  	  	  	  	  	  	  	   l_arm_pos(0),l_arm_rot(0),
-								   c_arm_rot(0),c_arm_ang(0), isfirst(true)
+PrimaryGeneratorAction::PrimaryGeneratorAction(CarmTracking* _carm)
+: G4VUserPrimaryGeneratorAction(), peak_energy(80), filter_thickness(0.2), frameNo(-1), isFirst(true)
 {
-	fMessenger = new PrimaryMessenger(this);
-
-	sourcePosition = G4ThreeVector(0.0*mm, -810*mm, 0.0*mm);
-//	SetSourceEnergy();
-//	SetSourcePosition();
-
 	fPrimary = new G4ParticleGun();
-	fPrimary->SetParticleDefinition(G4ParticleTable::GetParticleTable()->FindParticle("geantino"));
-//	fPrimary->SetParticlePosition(sourcePosition);
+	fMessenger = new PrimaryMessenger(this);
+	source = G4ThreeVector(0,0,-810) * mm;
+	cosTheta = cos(30*deg);
+	fPrimary->SetParticlePosition(rot * source);
+	carm = _carm;
+
+	
+	// fPrimary->SetParticleDefinition(G4ParticleTable::GetParticleTable()->FindParticle("geantino"));
+	//	fPrimary->SetParticlePosition(sourcePosition);
 }
 
 PrimaryGeneratorAction::~PrimaryGeneratorAction()
@@ -73,54 +52,39 @@ PrimaryGeneratorAction::~PrimaryGeneratorAction()
 
 void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
-	if(isfirst)
-	{
+	if(isFirst) {
 		SetSourceEnergy();
-		SetSourcePosition();
-		sourcePosition += G4ThreeVector(0, 0, l_arm_pos);
-		fPrimary->SetParticlePosition(sourcePosition);
-
-		isfirst = false;
+		SetSource(carm->GetRotationMatrix(frameNo), carm->GetTranslationMatrix(frameNo));
+		isFirst = false;
 	}
 
 	double rand_energy = G4UniformRand();
 
-	if (rand_energy == 1)
-		rand_energy = pdf_sort.rbegin()->second;
-	else
-	{
-		for (auto itr : cdf_sort)
-		{
-			if (rand_energy < itr.first)
-			{
+	if (rand_energy == 1)	rand_energy = pdf_sort.rbegin()->second;
+	else {
+		for (auto itr : cdf_sort) {
+			if (rand_energy < itr.first) {
 				rand_energy = itr.second;
 				break;
 			}
 		}
 	}
 
-	fPrimary->SetParticleEnergy(rand_energy*keV);
-	G4ThreeVector u = G4ThreeVector(1,0,0);
-	G4ThreeVector v = G4ThreeVector(0, cos(M_PI*0.5), -sin(M_PI*0.5));
-	G4ThreeVector w = G4ThreeVector(0, sin(M_PI*0.5),  cos(M_PI*0.5));
-	G4RotationMatrix rot = G4RotationMatrix(u,v,w);
-	fPrimary->SetParticleMomentumDirection(sourceRotM*rot*G4RandomDirection(cos(22*deg))); // 22 deg (anode angle = 11 deg)
-
-	//G4cout << "sampling_energy=" << rand_energy << G4endl;
+	// fPrimary->SetParticleEnergy(rand_energy*keV);
+	// G4ThreeVector u = G4ThreeVector(1,0,0);
+	// G4ThreeVector v = G4ThreeVector(0, cos(M_PI*0.5), -sin(M_PI*0.5));
+	// G4ThreeVector w = G4ThreeVector(0, sin(M_PI*0.5),  cos(M_PI*0.5));
+	// G4RotationMatrix rot = G4RotationMatrix(u,v,w);
+	
+	fPrimary->SetParticleMomentumDirection(SampleADirection());
 	fPrimary->GeneratePrimaryVertex(anEvent);
 
 }
 
 void PrimaryGeneratorAction::SetSourceEnergy()
 {
-//	cout << peak_energy << endl;
-//	cout << filter_thickness << endl;
-//	stringstream stream;
-//	stream << fixed << setprecision(1) << filter_thickness;
-//	G4String ss = stream.str();
-
 	G4String fileName;
-	fileName = "E" + peak_energy + "_Al" + filter_thickness + ".spec";
+	fileName = "E" + to_string(peak_energy) + "_Al" + to_string(filter_thickness).substr(0,3) + ".spec";
 	G4String spectra_folder = "./spectra/";
 
 	spectra_folder += fileName;
@@ -133,37 +97,22 @@ void PrimaryGeneratorAction::SetSourceEnergy()
 	double intensity(0);
 
 	double sum(0);
-	while(!ifs.eof())
-	{
+	while(!ifs.eof()) {
 		ifs >> energy >> intensity;
 		sum += energy * intensity;
 		pdf.insert(make_pair(energy, energy*intensity));
 	}
 
-	for (auto &itr : pdf)
-	{
+	for (auto &itr : pdf) {
 		itr.second /= sum;
 		pdf_sort[itr.second] = itr.first;
 	}
 
 	double cdf(0);
-	for (auto itr : pdf_sort)
-	{
+	for (auto itr : pdf_sort) {
 		cdf += itr.first;
 		cdf_sort.insert(make_pair(cdf, itr.second));
 	}
 
 	ifs.close();
-}
-
-G4ThreeVector PrimaryGeneratorAction::SetSourcePosition()
-{
-	// +:counterclockwise, -:clockwise (criteria : from the top-view of the reference axis)
-	// R_y => +:counterclockwise(~90), -:clockwise(~90)
-	// R_z => +:LAO(~120/~90), -:RAO(~185/~90)
-	// R_x => +:caudal(~90/~120), -:cranial(~90/~185)
-	sourceRotM.rotateX(c_arm_ang).rotateZ(c_arm_rot).rotateY(l_arm_rot);
-//	sourcePosition += G4ThreeVector(0, 0, l_arm_pos);
-
-	return sourcePosition = sourceRotM * sourcePosition; // R = R_x * R_z * R_y => XZY Euler Angle
 }

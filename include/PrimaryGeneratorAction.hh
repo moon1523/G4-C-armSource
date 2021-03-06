@@ -27,66 +27,69 @@
 /// \file PrimaryGeneratorAction.hh
 /// \brief Definition of the PrimaryGeneratorAction class
 
-#ifndef PrimaryGeneratorAction_h
-#define PrimaryGeneratorAction_h 1
+#ifndef PrimaryGeneratorAction_hh
+#define PrimaryGeneratorAction_hh 1
 
 #include "G4VUserPrimaryGeneratorAction.hh"
-#include "G4GeneralParticleSource.hh"
 #include "globals.hh"
-#include <fstream>
-#include <map>
+#include "G4Event.hh"
+#include "G4ParticleGun.hh"
+#include "G4SystemOfUnits.hh"
 #include "PrimaryMessenger.hh"
+#include "G4RotationMatrix.hh"
+#include "G4RandomDirection.hh"
 
-class G4ParticleGun;
-class G4Event;
-class G4Box;
+#include "CarmTracking.hh"
 
-/// The primary generator action class with particle gun.
-///
-/// The default kinematic is a 6 MeV gamma, randomly distribued
-/// in front of the phantom across 80% of the (X,Y) phantom size.
+#include <map>
+#include <algorithm>
+
+using namespace std;
+
+class PrimaryMessenger;
 
 class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
   public:
-    PrimaryGeneratorAction();
+    PrimaryGeneratorAction(CarmTracking* carm);
     virtual ~PrimaryGeneratorAction();
 
     virtual void GeneratePrimaries(G4Event*);
 
-//    void SetSourceEnergy(G4int _peak_energy, G4double _filter_thickness);
-//    G4ThreeVector SetSourcePosition(G4double _l_arm_pos, G4double _l_arm_rot,
-//    					   	   	    G4double _c_arm_rot,
-//								   	G4double _c_arm_ang);
-    void     GetPeakEnergy(G4String _peak_energy)           { peak_energy      = _peak_energy;      }
-    void     GetFilterThickness(G4String _filter_thickness) { filter_thickness = _filter_thickness; }
-    void     GetLarmPosition(G4double _l_arm_pos)           { l_arm_pos        = _l_arm_pos;        }
-    void     GetLarmRotation(G4double _l_arm_rot)           { l_arm_rot        = _l_arm_rot;        }
-    void     GetCarmRotation(G4double _c_arm_rot)           { c_arm_rot        = _c_arm_rot;        }
-    void     GetCarmAngulation(G4double _c_arm_ang)         { c_arm_ang        = _c_arm_ang;        }
+    void SetAngle(G4double angle)             { cosTheta = cos(angle); }
+    void SetDefaultSource(G4ThreeVector pos)  { source = pos; }
+    void SetSource(G4RotationMatrix _rot, G4ThreeVector trans) {
+        rot = _rot;
+        fPrimary->SetParticlePosition(rot*source + trans);
+    }
+    G4ThreeVector SampleADirection(){
+        return rot*G4RandomDirection(cosTheta);
+    }
 
-    void SetSourceEnergy();
+    void  SetPeakEnergy(G4int _peak_energy) { peak_energy      = _peak_energy;      }
+    void  SetFilterThickness(G4double _filter_thickness) { filter_thickness = _filter_thickness; }
+    void  SetFrameNo(G4int _frameNo) { frameNo = _frameNo; }
+    
+    void          SetSourceEnergy();
     G4ThreeVector SetSourcePosition();
 
   private:
-    //G4GeneralParticleSource* fPrimary;
-    G4ParticleGun* fPrimary;
+    G4ParticleGun*    fPrimary;
     PrimaryMessenger* fMessenger;
+    G4double          cosTheta;
+    G4RotationMatrix  rot;
+    G4ThreeVector     source;
+    G4int             frameNo;
 
-    std::map<G4double, G4double> pdf;
-	std::map<G4double, G4double, std::greater<G4double>> pdf_sort;
-	std::map<G4double, G4double> cdf_sort;
+    map<G4double, G4double> pdf;
+	  map<G4double, G4double, greater<G4double>> pdf_sort;
+	  map<G4double, G4double> cdf_sort;
 
-	G4String peak_energy;
-	G4String filter_thickness;
-	G4double l_arm_pos;
-	G4double l_arm_rot;
-	G4double c_arm_rot;
-	G4double c_arm_ang;
+	  G4int peak_energy;
+	  G4double filter_thickness;
 
-	G4ThreeVector sourcePosition;
-	G4RotationMatrix sourceRotM;
-	G4bool isfirst;
+    CarmTracking* carm;
+	  G4bool isFirst;
 };
 
 #endif

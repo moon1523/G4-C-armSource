@@ -27,46 +27,28 @@
 /// \file ActionInitialization.cc
 /// \brief Implementation of the ActionInitialization class
 
-#include "../include/ActionInitialization.hh"
-#include "../include/PrimaryGeneratorAction.hh"
+#include "ActionInitialization.hh"
+#include "PrimaryGeneratorAction.hh"
 #include "RunAction.hh"
 #include "EventAction.hh"
-//#include "B1SteppingAction.hh"
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-ActionInitialization::ActionInitialization()
- : G4VUserActionInitialization()
+ActionInitialization::ActionInitialization(CarmTracking* _carm)
+ : G4VUserActionInitialization(), carm(_carm)
 {}
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 ActionInitialization::~ActionInitialization()
 {}
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void ActionInitialization::BuildForMaster() const
 {
-  RunAction* runAction = new RunAction();
-  SetUserAction(runAction);
-
-
+  SetUserAction(new RunAction());
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void ActionInitialization::Build() const
 {
-  SetUserAction(new PrimaryGeneratorAction);
-
-  RunAction* runAction = new RunAction();
-  SetUserAction(runAction);
-
-  //EventAction* eventAction = new EventAction(runAction);
- // SetUserAction(eventAction);
-  
-////  SetUserAction(new B1SteppingAction(eventAction));
-}  
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+  SetUserAction(new PrimaryGeneratorAction(carm));
+  SetUserAction(new RunAction());
+}

@@ -53,9 +53,6 @@ class Run : public G4Run
   private:
 
 };
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 #endif
 
     

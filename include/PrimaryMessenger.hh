@@ -31,13 +31,24 @@
 #ifndef PRIMARYMESSENGER_HH_
 #define PRIMARYMESSENGER_HH_ 1
 
+#include "G4SystemOfUnits.hh"
 #include "globals.hh"
 #include "G4UImessenger.hh"
+#include "G4UIdirectory.hh"
 
-class G4UIdirectory;
-class G4UIcmdWithAString;
-class G4UIcmdWithADouble;
-class G4UIcmdWithADoubleAndUnit;
+#include "G4RunManager.hh"
+#include "PrimaryGeneratorAction.hh"
+#include "G4ParticleGun.hh"
+#include "RunAction.hh"
+
+#include "G4UIcmdWithAnInteger.hh"
+#include "G4UIcmdWithADouble.hh"
+#include "G4UIcmdWithADoubleAndUnit.hh"
+#include "G4UIcmdWithAString.hh"
+
+#include <sstream>
+#include <vector>
+
 class PrimaryGeneratorAction;
 
 class PrimaryMessenger: public G4UImessenger
@@ -46,28 +57,15 @@ public:
 	PrimaryMessenger(PrimaryGeneratorAction* primary);
 	virtual ~PrimaryMessenger();
 
-//	virtual void SetNewValue(G4UIcommand*, G4int, G4double,
-//							 G4double, G4double, G4double, G4double);
-
-	virtual void SetNewValue(G4UIcommand*, G4String);
+	virtual void SetNewValue(G4UIcommand* command, G4String newValue);
 
 private:
-	PrimaryGeneratorAction*    fPrimary;
-    G4UIdirectory*             fSourceDef;
-
-    G4UIcmdWithAString*        fsrc_energy;
-    G4UIcmdWithAString*        fsrc_filter;
-    G4UIcmdWithADoubleAndUnit* fsrc_l_arm_pos;
-    G4UIcmdWithADoubleAndUnit* fsrc_l_arm_rot;
-    G4UIcmdWithADoubleAndUnit* fsrc_c_arm_rot;
-    G4UIcmdWithADoubleAndUnit* fsrc_c_arm_ang;
-
-
-//	G4UIdirectory*             fExternalDir;
-//	G4UIcmdWithAString*        fBeamDirCmd;
-//	G4UIdirectory*             fInternalDir;
-//	G4UIcmdWithAString*        fSourceOrganCmd;
-//	G4UIcmdWithAString*        fSurfaceSourceCmd;
+	PrimaryGeneratorAction*      fPrimary;
+    
+    G4UIdirectory*               fSourceDef;
+    G4UIcmdWithAnInteger*        fsrc_frame;
+    G4UIcmdWithAnInteger*        fsrc_energy;
+    G4UIcmdWithADouble*          fsrc_filter;
 };
 
 #endif

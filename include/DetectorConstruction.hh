@@ -32,8 +32,8 @@
 
 #include "G4VUserDetectorConstruction.hh"
 #include "globals.hh"
-
 #include "G4ThreeVector.hh"
+
 #include <vector>
 #include <map>
 #include <tuple>
