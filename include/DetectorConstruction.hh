@@ -31,32 +31,72 @@
 #define DetectorConstruction_h 1
 
 #include "G4VUserDetectorConstruction.hh"
+
+#include <cmath>
+
 #include "globals.hh"
-#include "G4ThreeVector.hh"
 
-#include <vector>
-#include <map>
-#include <tuple>
-#include <fstream>
+#include "G4Material.hh"
+#include "G4NistManager.hh"
 
-typedef std::tuple<G4int, G4int, G4int> FACE;
+#include "G4Box.hh"
+#include "G4Tet.hh"
+#include "G4LogicalVolume.hh"
+#include "G4PVPlacement.hh"
+#include "G4PVParameterised.hh"
 
-class G4VPhysicalVolume;
-class G4LogicalVolume;
+#include "G4SDManager.hh"
+#include "G4MultiFunctionalDetector.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4VisAttributes.hh"
 
-/// Detector construction class to define materials and geometry.
+
+#include "TETModelImport.hh"
+#include "TETParameterisation.hh"
+#include "PSEnergyDeposit.hh"
+
+// *********************************************************************
+// This is UserDetectorConstruction class that defines geometry
+// -- Construct: construct Geometry by three methods listed below.
+//  └-- SetupWorldGeometry: Defines the world box (10*10*10 m3) and,
+//                          phantom container which has 10 cm-margins from
+//                          the bounding box of phantom
+//  └-- ConstructPhantom: Define the phantom geometry by using
+//                        G4PVParameterised class
+//  └-- PrintPhantomInformation: Print overall phantom information
+//
+// -- ConstructSDandField: Setup the MultiFunctionalDetector with energy
+//                         deposition scorer, and attach it to phantom
+//                         geometry
+// *********************************************************************
 
 class DetectorConstruction : public G4VUserDetectorConstruction
 {
   public:
-    DetectorConstruction();
+    DetectorConstruction(TETModelImport* tetData);
     virtual ~DetectorConstruction();
 
     virtual G4VPhysicalVolume* Construct();
     virtual void ConstructSDandField();
 
+    std::vector<G4VPhysicalVolume*> GetScoringPV() const { return scoringPV; }
 
-  protected:
+  private:
+    void SetupWorldGeometry();
+	void ConstructPhantom();
+	void PrintPhantomInformation();
+
+	G4VPhysicalVolume* worldPhysical;
+	G4LogicalVolume*   container_logic;
+
+	TETModelImport*    tetData;
+	G4ThreeVector      phantomSize;
+	G4ThreeVector      phantomBoxMin, phantomBoxMax;
+	G4int              nOfTetrahedrons;
+
+	G4LogicalVolume*   tetLogic;
+	std::vector<G4LogicalVolume*>   scoringLV;
+	std::vector<G4VPhysicalVolume*> scoringPV;
 
 };
 

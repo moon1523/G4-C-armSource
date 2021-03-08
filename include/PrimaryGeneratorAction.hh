@@ -73,6 +73,8 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
     void          SetSourceEnergy();
     G4ThreeVector SetSourcePosition();
 
+    G4ParticleGun* GetParticleGun()    const { return fPrimary; }
+
   private:
     G4ParticleGun*    fPrimary;
     PrimaryMessenger* fMessenger;
@@ -82,14 +84,14 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
     G4int             frameNo;
 
     map<G4double, G4double> pdf;
-	  map<G4double, G4double, greater<G4double>> pdf_sort;
-	  map<G4double, G4double> cdf_sort;
+    map<G4double, G4double, greater<G4double>> pdf_sort;
+    map<G4double, G4double> cdf_sort;
 
-	  G4int peak_energy;
-	  G4double filter_thickness;
+    G4int peak_energy;
+	G4double filter_thickness;
 
     CarmTracking* carm;
-	  G4bool isFirst;
+	G4bool isFirst;
 };
 
 #endif

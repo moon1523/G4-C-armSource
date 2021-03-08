@@ -7,4 +7,4 @@
 /source/frame  0 
 /source/energy 80
 /source/filter 0.2
-/run/beamOn    10
+# /run/beamOn    10000

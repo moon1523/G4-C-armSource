@@ -23,48 +23,65 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
+// TETRun.cc
+// \file   MRCP_GEANT4/External/src/TETRun.cc
+// \author Haegin Han
 //
-/// \file Run.cc
-/// \brief Implementation of the Run class
 
-#include "G4RunManager.hh"
-#include "G4Event.hh"
 
-#include "G4SDManager.hh"
-#include "G4HCofThisEvent.hh"
-#include "G4THitsMap.hh"
-#include "G4SystemOfUnits.hh"
-#include "DetectorConstruction.hh"
+#include "Run.hh"
 
-#include "../include/Run.hh"
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-Run::Run()
- : G4Run()
+Run::Run(TETModelImport* _tetData)
+:G4Run(), tetData(_tetData), fCollID_skinTet(-1)
 {
 
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 Run::~Run()
-{ }
+{
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+}
 
 void Run::RecordEvent(const G4Event* event)
 {
+	if (fCollID_skinTet < 0)
+		fCollID_skinTet = G4SDManager::GetSDMpointer()->GetCollectionID("PhantomSD/eDep");
 
-  G4Run::RecordEvent(event);      
-}  
+	// Hits collections
+	//
+	G4HCofThisEvent* HCE = event->GetHCofThisEvent();
+	if(!HCE) return;
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+	// Energy in crystals : identify 'good events'
+	//
+	G4THitsMap<G4double>* evtMap = static_cast<G4THitsMap<G4double>*>(HCE->GetHC(fCollID_skinTet));
 
-void Run::Merge(const G4Run* aRun)
+	auto hitsMap = *evtMap->GetMap();
+	for (auto itr:hitsMap) {
+		G4double edep = *(itr.second);
+		fEdep[itr.first] *= edep;
+	}
+
+	std::ofstream ofs("hitsMap.txt", std::ios::app);
+	ofs << "hitsMap" << G4endl;
+
+	for (auto itr:hitsMap) {
+		G4double edep = *(itr.second);
+		fEdep[itr.first] += edep;
+		ofs << itr.first << " " << *(itr.second) << " " << fEdep[itr.first] << G4endl;
+	}
+
+	G4Run::RecordEvent(event);
+}
+
+void Run::Merge(const G4Run* run)
 {
+	const Run* localRun = static_cast<const Run*>(run);
 
-	G4Run::Merge(aRun);
-} 
+	auto localEdep = localRun->fEdep;
+	for(auto itr:localEdep)
+		fEdep[itr.first] += itr.second;
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+	G4Run::Merge(run);
+}
+

@@ -23,35 +23,36 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
+// TETRun.hh
+// \file   MRCP_GEANT4/External/include/TETRun.hh
+// \author Haegin Han
 //
-/// \file Run.hh
-/// \brief Definition of the Run class
 
 #ifndef Run_h
 #define Run_h 1
 
 #include "G4Run.hh"
-#include "globals.hh"
-#include "G4StatAnalysis.hh"
+#include "G4Event.hh"
+#include "G4THitsMap.hh"
+#include "G4SDManager.hh"
+#include "TETModelImport.hh"
 
-
-/// Run class
-///
-/// In RecordEvent() there is collected information event per event 
-/// from Hits Collections, and accumulated statistic for the run 
 
 class Run : public G4Run
 {
-  public:
-    Run();
-    virtual ~Run();
+public:
+	Run(TETModelImport* _tetData);
+	virtual ~Run();
 
-    virtual void RecordEvent(const G4Event*);
-    virtual void Merge(const G4Run*);
+	virtual void RecordEvent(const G4Event*);
+	virtual void Merge(const G4Run*);
 
+	std::map<G4int, G4double> GetfEdep() const { return fEdep; }
 
-  private:
-
+private:
+	TETModelImport* tetData;
+	G4int fCollID_skinTet;
+	std::map<G4int, G4double> fEdep;
 };
 #endif
 

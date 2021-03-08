@@ -31,34 +31,50 @@
 #define RunAction_h 1
 
 #include "G4UserRunAction.hh"
-#include "G4Accumulable.hh"
-#include "globals.hh"
 
 #include "DetectorConstruction.hh"
+#include "PrimaryGeneratorAction.hh"
+#include "G4RunManager.hh"
+#include "Run.hh"
+
+#include <fstream>
+
 
 class G4Run;
 
 /// Run action class
 ///
-/// In EndOfRunAction(), it calculates the dose in the selected volume 
+/// In EndOfRunAction(), it calculates the dose in the selected volume
 /// from the energy deposit accumulated via stepping and event actions.
 /// The computed dose is then printed on the screen.
 
 class RunAction : public G4UserRunAction
 {
   public:
-    RunAction();
+    RunAction(TETModelImport* _tetData);
     virtual ~RunAction();
 
     virtual G4Run* GenerateRun();
     virtual void BeginOfRunAction(const G4Run*);
     virtual void   EndOfRunAction(const G4Run*);
 
-    //void AddEdep (G4double edep);
 
   private:
-    //G4Accumulable<G4double> fEdep;
-    //G4Accumulable<G4double> fEdep2;
+    TETModelImport* tetData;
+    Run*            fRun;
+    G4int           numOfEvent;
+    G4int           runID;
+    G4String        outputFile;
+
+    G4String primaryParticle;
+    G4String primarySourceName;
+    G4double primaryEnergy;
+    G4double beamArea;
+
+
+    std::map<G4int, G4double> massMap;
+    std::map<G4int, std::pair<G4double,G4double>> doses;
+    std::map<G4int, G4String> nameMap;
 };
 
 #endif

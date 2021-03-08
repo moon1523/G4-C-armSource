@@ -49,7 +49,7 @@ TETModelImport::TETModelImport(G4String _phantomName, G4UIExecutive* ui)
 	G4String mtlFile      =  phantomName + ".mtl";
 
 	// read dose file (*.dose) -if there is any
-	// DoseRead(doseFile);
+	DoseRead(doseFile);
 	// read phantom data files (*. ele, *.node)
     DataRead(eleFile, nodeFile);
 	// read material file (*.material)

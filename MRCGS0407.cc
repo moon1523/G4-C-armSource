@@ -91,7 +91,7 @@ int main(int argc,char** argv)
 	}
 
   // print usage when there are more than six arguments
-	if ( argc>7 || macro.empty() || phantomName.empty()){
+	if ( argc>7 || phantomName.empty()){
 		PrintUsage();
 		return 1;
 	}
@@ -99,9 +99,9 @@ int main(int argc,char** argv)
   // Detect interactive mode (if no macro file name) and define UI session
 	//
 	if ( !macro.size() ) {
-		ui = new G4UIExecutive(argc, argv, "csh");
-		G4cerr<<"ERROR: Interactive mode is not available. Please provide macro file."<<G4endl;
-		return 1;
+		ui = new G4UIExecutive(argc, argv, "qt");
+//		G4cerr<<"ERROR: Interactive mode is not available. Please provide macro file."<<G4endl;
+//		return 1;
 	}
 
   // Choose the Random engine
@@ -117,18 +117,18 @@ int main(int argc,char** argv)
   G4RunManager* runManager = new G4RunManager;
 #endif
 
-  // Set a class to import phantom data
+  // Set a class to import phantom data, tracking result
   //
-  TETModelImport* tetdata = new TETModelImport(phantomName, ui);
+  TETModelImport* tetData = new TETModelImport(phantomName, ui);
+  CarmTracking* carm = new CarmTracking();
 
   // Set mandatory initialization classes
   //
-  runManager->SetUserInitialization(new DetectorConstruction());
+  runManager->SetUserInitialization(new DetectorConstruction(tetData));
   G4VModularPhysicsList* physicsList = new FTFP_BERT;
   physicsList->RegisterPhysics(new G4StepLimiterPhysics());
-  CarmTracking* carm = new CarmTracking();
   runManager->SetUserInitialization(physicsList);
-  runManager->SetUserInitialization(new ActionInitialization(carm));
+  runManager->SetUserInitialization(new ActionInitialization(tetData, carm));
   
   
   // Initialize visualization

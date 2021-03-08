@@ -33,8 +33,8 @@
 #include "EventAction.hh"
 
 
-ActionInitialization::ActionInitialization(CarmTracking* _carm)
- : G4VUserActionInitialization(), carm(_carm)
+ActionInitialization::ActionInitialization(TETModelImport* _tetData, CarmTracking* _carm)
+ : G4VUserActionInitialization(), tetData(_tetData), carm(_carm)
 {}
 
 
@@ -44,11 +44,11 @@ ActionInitialization::~ActionInitialization()
 
 void ActionInitialization::BuildForMaster() const
 {
-  SetUserAction(new RunAction());
+  SetUserAction(new RunAction(tetData));
 }
 
 void ActionInitialization::Build() const
 {
   SetUserAction(new PrimaryGeneratorAction(carm));
-  SetUserAction(new RunAction());
+  SetUserAction(new RunAction(tetData));
 }

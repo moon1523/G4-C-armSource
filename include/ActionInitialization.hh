@@ -36,7 +36,7 @@
 class ActionInitialization : public G4VUserActionInitialization
 {
   public:
-    ActionInitialization(CarmTracking* _carm);
+    ActionInitialization(TETModelImport* _tetData,CarmTracking* _carm);
     virtual ~ActionInitialization();
 
     virtual void BuildForMaster() const;
@@ -44,6 +44,7 @@ class ActionInitialization : public G4VUserActionInitialization
 
   private:
     CarmTracking* carm;
+    TETModelImport* tetData;
 };
 
 #endif
