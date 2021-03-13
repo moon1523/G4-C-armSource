@@ -91,6 +91,8 @@ void TETModelImport::DoseRead(G4String doseFile){
 
 void TETModelImport::DataRead(G4String eleFile, G4String nodeFile)
 {
+	using namespace std;
+
 	G4String tempStr;
 	G4int tempInt;
 
@@ -188,6 +190,232 @@ void TETModelImport::DataRead(G4String eleFile, G4String nodeFile)
 			numTetMap[materialVector[i]] = 1;
 		}
 	}
+
+	ifstream ifs_inner("skin100.obj");
+	ifstream ifs_outer("skin50.obj");
+	if (!ifs_inner.is_open()) { G4cerr << "skin100.obj was not opened" << G4endl; exit(1); }
+	if (!ifs_outer.is_open()) { G4cerr << "skin50.obj was not opened" << G4endl; exit(1); }
+	G4String dump;
+
+
+	G4cout << "Reading skin100.obj file..." << flush;
+	while (getline(ifs_inner, dump)) {
+		stringstream ss(dump);
+		ss >> dump;
+		if (dump == "v") {
+			double x, y, z;
+			ss >> x >> y >> z; G4ThreeVector point(x*cm,y*cm,z*cm);
+			innerVec.push_back(point);
+		}
+		if (dump == "f") {
+			G4int a, b, c;
+			ss >> a >> b >> c;
+			innerFaces.push_back({a-1, b-1, c-1});
+			innerOgFaces.push_back({a-1, b-1, c-1});
+		}
+	} ifs_inner.close();
+	G4cout << "done" << G4endl;
+
+	G4cout << "Reading skin50.obj file..." << flush;
+	while (getline(ifs_outer, dump)) {
+		stringstream ss(dump);
+		ss >> dump;
+		if (dump == "v") {
+			double x, y, z;
+			ss >> x >> y >> z; G4ThreeVector point(x*cm,y*cm,z*cm);
+			outerVec.push_back(point);
+		}
+		if (dump == "f") {
+			G4int a, b, c;
+			ss >> a >> b >> c;
+			outerFaces.push_back({a-1, b-1, c-1});
+			outerOgFaces.push_back({a-1, b-1, c-1});
+		}
+	} ifs_outer.close();
+	G4cout << "done" << G4endl;
+
+
+
+//	ofstream inn("inner.txt");
+//	for (auto i:innerVec)
+//		inn << "v " <<  i << G4endl;
+//	for (int i=0;i<innerFaces.size();i++)
+//		inn << "f " <<  innerFaces[i][0] << " " << innerFaces[i][1] << " " << innerFaces[i][2] << G4endl;
+//	ofstream out("outer.txt");
+//	for (auto o:outerVec)
+//		out << "v " <<  o << G4endl;
+//	for (int i=0;i<outerFaces.size();i++)
+//		out << "f " <<  outerFaces[i][0] << " " << outerFaces[i][1] << " " << outerFaces[i][2] << G4endl;
+
+//	ofstream gd("grid.txt");
+	map<IJK, vector<G4int>> grid;
+	for (G4int i=0;i<vertexVector.size();i++) {
+		grid[IJK(floor(vertexVector[i].x()),floor(vertexVector[i].y()),floor(vertexVector[i].z()))].push_back(i);
+//		gd << floor(vertexVector[i].x()) << " " << floor(vertexVector[i].y()) << " " << floor(vertexVector[i].z()) << "  " << i << G4endl;
+	}
+
+	double epsilon(1e-5);
+	int count(0);
+
+	for (auto i:innerVec) {
+		IJK inner_ijk = IJK(floor(i.x()), floor(i.y()), floor(i.z()));
+		for (auto n:grid[inner_ijk]) {
+			if (fabs(i.x()-vertexVector[n].x()) > epsilon) continue;
+			if (fabs(i.y()-vertexVector[n].y()) > epsilon) continue;
+			if (fabs(i.z()-vertexVector[n].z()) > epsilon) continue;
+			innerNodes.push_back(n);
+			break;
+		}
+	} assert(innerNodes.size()==innerVec.size());
+
+	for (auto o:outerVec) {
+		IJK outer_ijk = IJK(floor(o.x()), floor(o.y()), floor(o.z()));
+		for (auto n:grid[outer_ijk]) {
+			if (fabs(o.x()-vertexVector[n].x()) > epsilon) continue;
+			if (fabs(o.y()-vertexVector[n].y()) > epsilon) continue;
+			if (fabs(o.z()-vertexVector[n].z()) > epsilon) continue;
+			outerNodes.push_back(n);
+			break;
+		}
+	} assert(outerNodes.size()==outerVec.size());
+
+//	for (int i=0;i<innerVec.size();i++) {
+//		skinpairNode.push_back({innerNodes[i],outerNodes[i]});
+//	}
+//
+////	ofstream innN("innerNodes.txt");
+////	for (auto i:innerNodes) {
+////		innN << i << G4endl;
+////	}
+////	ofstream outN("outerNodes.txt");
+////	for (auto o:outerNodes) {
+////		outN << o << G4endl;
+////	}
+//
+	ofstream aface("aFace.txt");
+	//위에서 저장한 inner_faces의 face는 폴리곤 파일에서의 vertex ID 기준으로 저장되어 있음.
+	//따라서, innerNodes를 이용하여 사면체 메시에서의 node ID 기준으로 변환
+	for(vector<G4int> &aFace:innerFaces) {
+		aFace = {innerNodes[aFace[0]],innerNodes[aFace[1]],innerNodes[aFace[2]]};
+		aface << aFace[0] << " " << aFace[1] << " " << aFace[2] << G4endl;
+	}
+	aface << "#" << G4endl;
+	for(vector<G4int> &aFace:outerFaces) {
+		aFace = {outerNodes[aFace[0]],outerNodes[aFace[1]],outerNodes[aFace[2]]};
+		aface << aFace[0] << " " << aFace[1] << " " << aFace[2] << G4endl;
+	}
+//
+//	//2. 안쪽과 바깥쪽 점 짝을 지어주기
+////	ofstream gali("grid_aligned.txt");
+//	grid.clear();
+//	for (int i=0;i<outerVec.size();i++) {
+//		grid[IJK(floor(outerVec[i].x()),floor(outerVec[i].y()),floor(outerVec[i].z()))].push_back(outerNodes[i]);
+////		gali << floor(outerVec[i].x()) << " " << floor(outerVec[i].y()) << " " << floor(outerVec[i].z()) << " " << outerNodes[i] <<  G4endl;
+//	}
+//
+//	ofstream ali("outerNodes_aligned.txt");
+//	vector<G4int> outerNodes_aligned;
+//	for (auto i:innerNodes) {
+//		IJK inner_ijk = IJK(floor(vertexVector[i].x()), floor(vertexVector[i].y()), floor(vertexVector[i].z()));
+//		G4double min(1*cm);
+//		G4int pairedOuter;
+//
+//		for (G4int o:grid[inner_ijk]) {
+//			G4double dist2 = (vertexVector[i] - vertexVector[o]).mag2();
+//			ali << dist2 << G4endl;
+//			if (dist2 < min) {
+//				min = dist2;
+//				pairedOuter = o;
+//			}
+//		}
+//
+//		if (min>(70*um)*(70*um)) G4cout << min << G4endl;
+//		outerNodes_aligned.push_back(pairedOuter);
+//	}
+//
+//	ali << "# " << (70*um)*(70*um) << G4endl;
+//	for (auto itr : outerNodes_aligned) {
+//		ali << itr << G4endl;
+//	}
+
+
+
+
+//
+//
+//	for (auto itr: skin126Map) {
+//		skin126node.push_back(itr.first);
+//	}
+//
+//	for (int i=0; i<skin126node.size()*0.5; i++) {
+//		skinpairNode.push_back(make_pair(skin126node[i], skin126node[i+skin126node.size()*0.5]));
+//	}
+//
+//	ifstream ifs("skinfacetorder.txt");
+//	G4String dump;
+//	while(getline(ifs,dump)) {
+//		stringstream ss(dump); G4int a,b,c;
+//		ss >> a >> b >> c;
+//		G4int* ele6 = new G4int[6];
+//		ele6[0] = skinpairNode[a-1].first;
+//		ele6[1] = skinpairNode[b-1].first;
+//		ele6[2] = skinpairNode[c-1].first;
+//		ele6[3] = skinpairNode[a-1].second;
+//		ele6[4] = skinpairNode[b-1].second;
+//		ele6[5] = skinpairNode[c-1].second;
+//		node6Vec.push_back(ele6);
+//	}
+//
+////	ofstream node6("node6Vec.txt");
+////	for (auto n:node6Vec) {
+////		for (G4int i=0;i<6;i++) {
+////			node6 << n[i] << " ";
+////		}
+////		node6 << G4endl;
+////	}
+////	G4cout << "node6Vec done" <<G4endl;
+//
+//
+//	ofstream tet("tet6.txt");
+//
+//	G4int face(0); G4int chk(0);
+//	for (auto n:node6Vec) {
+//		tet << "# " << face++ << " " << n[0] << " " << n[1] << " " << n[2] << " " << n[3] << " " << n[4] << " " << n[5] << G4endl;
+////		tet << "# " << face++ << G4endl;
+//		for (auto m:skinMap) {
+//			G4int count = 0;
+//			if (n[0] == m.second[0] || n[0] == m.second[1] || n[0] == m.second[2] || n[0] == m.second[3]) { count++; }
+//			if (n[1] == m.second[0] || n[1] == m.second[1] || n[1] == m.second[2] || n[1] == m.second[3]) { count++; }
+//			if (n[2] == m.second[0] || n[2] == m.second[1] || n[2] == m.second[2] || n[2] == m.second[3]) { count++; }
+//			if (n[3] == m.second[0] || n[3] == m.second[1] || n[3] == m.second[2] || n[3] == m.second[3]) { count++; }
+//			if (count == 4) { tet << m.first << " " << m.second[0] << " " << m.second[1] << " " << m.second[2] << " " << m.second[3] << G4endl; continue; }
+////			if (count == 4) { tet << m.first << G4endl; chk++; continue; }
+//			if (n[4] == m.second[0] || n[4] == m.second[1] || n[4] == m.second[2] || n[4] == m.second[3]) { count++; }
+//			if (count == 4) { tet << m.first << " " << m.second[0] << " " << m.second[1] << " " << m.second[2] << " " << m.second[3] << G4endl; continue; }
+////			if (count == 4) { tet << m.first << G4endl; chk++; continue; }
+//			if (n[5] == m.second[0] || n[5] == m.second[1] || n[5] == m.second[2] || n[5] == m.second[3]) { count++; }
+//			if (count == 4) { tet << m.first << " " << m.second[0] << " " << m.second[1] << " " << m.second[2] << " " << m.second[3] << G4endl; continue; }
+////			if (count == 4) { tet << m.first << G4endl; chk++; continue; }
+//		}
+//	}
+//	tet << "Tet # : " << chk << G4endl;
+//
+//
+//
+//
+//
+//
+//
+//
+//	ofstream chk("skinpairNode.obj");
+//	ofstream chk2("skinpairNode2.obj");
+//	for (auto itr:skinpairNode) {
+//		skin126 << itr.first << " " << itr.second << G4endl;
+//		chk << "v " << vertexVector[itr.first].x()/cm << " " << vertexVector[itr.first].y()/cm << " " << vertexVector[itr.first].z()/cm << G4endl;
+//		chk2 << "v " << vertexVector[itr.second].x()/cm << " " << vertexVector[itr.second].y()/cm << " " << vertexVector[itr.second].z()/cm << G4endl;
+//	}
+
+
 	ifpEle.close();
 }
 

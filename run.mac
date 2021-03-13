@@ -1,10 +1,21 @@
 /run/verbose 1
 /tracking/verbose 0
 
+/run/numberOfThreads 6
+
 /run/initialize
 
 /gun/particle  gamma
+/source/filter 0.2
+
 /source/frame  0 
 /source/energy 80
-/source/filter 0.2
-# /run/beamOn    10000
+/run/beamOn    100000
+
+/source/frame  1
+/source/energy 90
+/run/beamOn    100000
+
+/source/frame  2
+/source/energy 100
+/run/beamOn    100000

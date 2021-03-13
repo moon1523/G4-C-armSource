@@ -80,6 +80,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     virtual void ConstructSDandField();
 
     std::vector<G4VPhysicalVolume*> GetScoringPV() const { return scoringPV; }
+    std::map<G4int, G4VPhysicalVolume*> GetSkinPVMap() const { return skinpvMap; }
 
   private:
     void SetupWorldGeometry();
@@ -97,6 +98,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
 	G4LogicalVolume*   tetLogic;
 	std::vector<G4LogicalVolume*>   scoringLV;
 	std::vector<G4VPhysicalVolume*> scoringPV;
+	std::map<G4int, G4VPhysicalVolume*> skinpvMap;
 
 };
 

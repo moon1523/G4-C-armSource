@@ -23,68 +23,58 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
+// TETParameterisation.hh
+// \file   MRCP_GEANT4/External/include/TETParameterisation.hh
+// \author Haegin Han
 //
-/// \file RunAction.hh
-/// \brief Definition of the RunAction class
 
-#ifndef RunAction_h
-#define RunAction_h 1
+#ifndef TETParameterisation_h
+#define TETParameterisation_h 1
 
-#include "G4UserRunAction.hh"
+#include "TETModelImport.hh"
 
-#include "DetectorConstruction.hh"
-#include "PrimaryGeneratorAction.hh"
-#include "G4RunManager.hh"
-#include "Run.hh"
+#include "globals.hh"
+#include "G4VPVParameterisation.hh"
+#include "G4VSolid.hh"
+#include "G4Material.hh"
+#include "G4VisAttributes.hh"
+#include "G4RotationMatrix.hh"
 
-#include <fstream>
+#include <map>
 
+class G4VPhysicalVolume;
 
-class G4Run;
+// *********************************************************************
+// This class defines the phantom geometry by using G4PVParameterisation
+// class.
+// -- ComputeSolid: return the G4Tet* for each element
+// -- ComputeMaterial: return the G4Material* corresponding to each organ,
+//                     and set the colours for visualization purposes
+// *********************************************************************
 
-/// Run action class
-///
-/// In EndOfRunAction(), it calculates the dose in the selected volume
-/// from the energy deposit accumulated via stepping and event actions.
-/// The computed dose is then printed on the screen.
-
-class RunAction : public G4UserRunAction
+class TETParameterisation : public G4VPVParameterisation
 {
   public:
-    RunAction(TETModelImport* _tetData);
-    virtual ~RunAction();
+    TETParameterisation(TETModelImport* tetData);
+    virtual ~TETParameterisation();
+    
+    virtual G4VSolid* ComputeSolid(
+    		       const G4int copyNo, G4VPhysicalVolume* );
+    
+    virtual void ComputeTransformation(
+                   const G4int,G4VPhysicalVolume*) const;
 
-    virtual G4Run* GenerateRun();
-    virtual void BeginOfRunAction(const G4Run*);
-    virtual void   EndOfRunAction(const G4Run*);
-
-    std::vector<G4double> SkinDoseDistNorm(std::vector<G4double> faceDose);
-    void PrintPLY(G4String fileName, std::vector<G4double> vertexWeight);
-
-    std::map<G4int, G4double> SkinDoseDistNorm(std::map<G4int, G4double> dose);
-    void PrintPLY(G4String fileName, std::map<G4int, G4double> doseDist);
-
+    virtual G4Material* ComputeMaterial(const G4int copyNo,
+                                        G4VPhysicalVolume* phy,
+                                        const G4VTouchable*);
 
   private:
-    TETModelImport* tetData;
-    Run*            fRun;
-    G4int           numOfEvent;
-    G4int           runID;
-    G4String        outputFile;
+    TETModelImport*                    tetData;
+    std::map<G4int, G4VisAttributes*>  visAttMap;
+    G4bool                             isforVis;
+    G4ThreeVector                      transM;
+    G4RotationMatrix*  				   rotM;
 
-    G4String primaryParticle;
-    G4String primarySourceName;
-    G4double primaryEnergy;
-    G4double beamArea;
-
-
-    std::map<G4int, G4double> massMap;
-    std::map<G4int, std::pair<G4int, G4double>> massMap2;
-    std::map<G4int, std::pair<G4double,G4double>> doses;
-    std::map<G4int, G4String> nameMap;
-
-    std::ofstream ofs;
 };
 
 #endif
-

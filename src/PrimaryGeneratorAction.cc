@@ -38,10 +38,6 @@ PrimaryGeneratorAction::PrimaryGeneratorAction(CarmTracking* _carm)
 	cosTheta = cos(30*deg);
 	fPrimary->SetParticlePosition(rot * source);
 	carm = _carm;
-	
-
-	// fPrimary->SetParticleDefinition(G4ParticleTable::GetParticleTable()->FindParticle("geantino"));
-	//	fPrimary->SetParticlePosition(sourcePosition);
 }
 
 PrimaryGeneratorAction::~PrimaryGeneratorAction()
@@ -73,9 +69,6 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 	fPrimary->SetParticleEnergy(rand_energy*keV);
 	fPrimary->SetParticleMomentumDirection(SampleADirection());
 	fPrimary->GeneratePrimaryVertex(anEvent);
-
-	G4cout << fPrimary->GetParticlePosition() << G4endl;
-
 }
 
 void PrimaryGeneratorAction::SetSourceEnergy()

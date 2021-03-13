@@ -23,67 +23,34 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
+// TETPSEnergyDeposit.hh
+// \file   MRCP_GEANT4/External/include/TETPSEnergyDeposit.hh
+// \author Haegin Han
 //
-/// \file RunAction.hh
-/// \brief Definition of the RunAction class
 
-#ifndef RunAction_h
-#define RunAction_h 1
+#ifndef PSEnergyDeposit_h
+#define PSEnergyDeposit_h 1
 
-#include "G4UserRunAction.hh"
+#include "G4PSEnergyDeposit.hh"
+#include "TETModelImport.hh"
 
-#include "DetectorConstruction.hh"
-#include "PrimaryGeneratorAction.hh"
-#include "G4RunManager.hh"
-#include "Run.hh"
+// *********************************************************************
+// This is the scorer based on G4PSEnergyDeposit class.
+// -- GetIndex: Return the organ ID instead of copy number automatically
+//              given by Parameterisation geometry.
+// *********************************************************************
 
-#include <fstream>
-
-
-class G4Run;
-
-/// Run action class
-///
-/// In EndOfRunAction(), it calculates the dose in the selected volume
-/// from the energy deposit accumulated via stepping and event actions.
-/// The computed dose is then printed on the screen.
-
-class RunAction : public G4UserRunAction
+class PSEnergyDeposit : public G4PSEnergyDeposit
 {
-  public:
-    RunAction(TETModelImport* _tetData);
-    virtual ~RunAction();
+   public:
+      PSEnergyDeposit(G4String name,TETModelImport* _tetData);
+      virtual ~PSEnergyDeposit();
 
-    virtual G4Run* GenerateRun();
-    virtual void BeginOfRunAction(const G4Run*);
-    virtual void   EndOfRunAction(const G4Run*);
-
-    std::vector<G4double> SkinDoseDistNorm(std::vector<G4double> faceDose);
-    void PrintPLY(G4String fileName, std::vector<G4double> vertexWeight);
-
-    std::map<G4int, G4double> SkinDoseDistNorm(std::map<G4int, G4double> dose);
-    void PrintPLY(G4String fileName, std::map<G4int, G4double> doseDist);
-
+  protected:
+      virtual G4int GetIndex(G4Step*);
 
   private:
-    TETModelImport* tetData;
-    Run*            fRun;
-    G4int           numOfEvent;
-    G4int           runID;
-    G4String        outputFile;
-
-    G4String primaryParticle;
-    G4String primarySourceName;
-    G4double primaryEnergy;
-    G4double beamArea;
-
-
-    std::map<G4int, G4double> massMap;
-    std::map<G4int, std::pair<G4int, G4double>> massMap2;
-    std::map<G4int, std::pair<G4double,G4double>> doses;
-    std::map<G4int, G4String> nameMap;
-
-    std::ofstream ofs;
+      TETModelImport* tetData;
 };
 
 #endif

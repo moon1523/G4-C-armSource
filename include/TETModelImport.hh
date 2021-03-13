@@ -37,6 +37,7 @@
 #include <iomanip>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 #include "G4UIExecutive.hh"
 #include "G4SystemOfUnits.hh"
@@ -61,6 +62,9 @@
 //                              number of tetrahedrons, volume, density,
 //                              mass, and name for each organ
 // *********************************************************************
+
+typedef std::tuple<G4int, G4int, G4int> FACE;
+typedef std::tuple<G4int, G4int, G4int> IJK;
 
 class TETModelImport
 {
@@ -106,6 +110,19 @@ public:
         return eleVec;
     }
 
+    std::vector<G4ThreeVector> GetInnerVec() { return innerVec; }
+	std::vector<G4ThreeVector> GetOuterVec() { return outerVec; }
+	std::vector<std::vector<G4int>> GetInnerFaces() { return innerFaces; }
+	std::vector<std::vector<G4int>> GetOuterFaces() { return outerFaces; }
+	std::vector<std::vector<G4int>> GetInnerOgFaces() { return innerOgFaces; }
+	std::vector<std::vector<G4int>> GetOuterOgFaces() { return outerOgFaces; }
+	std::vector<G4int> GetInnerNodes() { return innerNodes; }
+	std::vector<G4int> GetOuterNodes() { return outerNodes; }
+	G4int GetSkinVertexSize() { return outerVec.size(); }
+	G4int GetSkinFaceSize() { return outerFaces.size(); }
+
+
+
 private:
 
 	// private methods
@@ -127,6 +144,7 @@ private:
 		}
 		return atoi(token.c_str());
 	}
+
 
 	G4String phantomName;
 
@@ -157,6 +175,17 @@ private:
 	std::map<G4int, G4Material*>                             materialMap;
 	std::map<G4int, G4double>                                densityMap;
 	std::map<G4int, G4String>                                organNameMap;
+
+
+	// To calculate skin dose distribution
+	std::vector<G4ThreeVector> innerVec;
+	std::vector<G4ThreeVector> outerVec;
+	std::vector<G4int> innerNodes;
+	std::vector<G4int> outerNodes;
+	std::vector<std::vector<G4int>> innerFaces;
+	std::vector<std::vector<G4int>> outerFaces;
+	std::vector<std::vector<G4int>> innerOgFaces;
+	std::vector<std::vector<G4int>> outerOgFaces;
 
 };
 

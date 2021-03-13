@@ -90,6 +90,7 @@ void DetectorConstruction::SetupWorldGeometry()
 			          worldLogical, false, 0);
 	container_logic->SetOptimisation(TRUE);
 	container_logic->SetSmartless( 0.5 ); // for optimization (default=2)
+//	container_logic->SetVisAttributes(new G4VisAttributes(G4Colour(1., 1., 1., 0.)));
 }
 
 void DetectorConstruction::ConstructPhantom()
@@ -111,15 +112,53 @@ void DetectorConstruction::ConstructPhantom()
 //			              kUndefined,tetData->GetNumTetrahedron(),
 //						  new TETParameterisation(tetData));
 
-	for (int i=0; i<tetData->GetNumTetrahedron(); i++) {
+	vector<vector<G4int>> innerFaces = tetData->GetInnerFaces();
+	vector<vector<G4int>> outerFaces = tetData->GetOuterFaces();
+	G4ThreeVector center = (tetData->GetPhantomBoxMax() + tetData->GetPhantomBoxMin())*0.5;
+	G4int skinCount(0);
+
+	for (int i=0;i<innerFaces.size();i++) {
+		G4VSolid* skin_Tet1 = new G4Tet("SkinTet1_Solid",
+										tetData->GetAVertex(outerFaces[skinCount][0])-center,
+										tetData->GetAVertex(outerFaces[skinCount][1])-center,
+										tetData->GetAVertex(outerFaces[skinCount][2])-center,
+										tetData->GetAVertex(innerFaces[skinCount][1])-center);
+		G4VSolid* skin_Tet2 = new G4Tet("SkinTet2_Solid",
+										tetData->GetAVertex(outerFaces[skinCount][0])-center,
+										tetData->GetAVertex(innerFaces[skinCount][1])-center,
+										tetData->GetAVertex(outerFaces[skinCount][2])-center,
+										tetData->GetAVertex(innerFaces[skinCount][0])-center);
+		G4VSolid* skin_Tet3 = new G4Tet("SkinTet3_Solid",
+										tetData->GetAVertex(innerFaces[skinCount][0])-center,
+										tetData->GetAVertex(innerFaces[skinCount][2])-center,
+										tetData->GetAVertex(outerFaces[skinCount][2])-center,
+										tetData->GetAVertex(innerFaces[skinCount][1])-center);
+		G4LogicalVolume* lv_Tet1 = new G4LogicalVolume(skin_Tet1, tetData->GetMaterial(126), "lv_Tet1");
+		G4LogicalVolume* lv_Tet2 = new G4LogicalVolume(skin_Tet2, tetData->GetMaterial(126), "lv_Tet2");
+		G4LogicalVolume* lv_Tet3 = new G4LogicalVolume(skin_Tet3, tetData->GetMaterial(126), "lv_Tet3");
+
+		G4PVPlacement* pv_Tet1 = new G4PVPlacement(0, G4ThreeVector(), lv_Tet1, "pv_Tet1", container_logic, false, 12600+skinCount);
+		G4PVPlacement* pv_Tet2 = new G4PVPlacement(0, G4ThreeVector(), lv_Tet2, "pv_Tet2", container_logic, false, 12600+skinCount);
+		G4PVPlacement* pv_Tet3 = new G4PVPlacement(0, G4ThreeVector(), lv_Tet3, "pv_Tet3", container_logic, false, 12600+skinCount);
+		scoringPV.push_back(pv_Tet1);
+		scoringPV.push_back(pv_Tet2);
+		scoringPV.push_back(pv_Tet3);
+		skinCount++;
+	}
+
+	for (G4int i=0; i<tetData->GetNumTetrahedron(); i++) {
 		G4Material* mat_Tet = tetData->GetMaterial(tetData->GetMaterialIndex(i));
 		G4VSolid* sol_Tet = tetData->GetTetrahedron(i);
 		G4LogicalVolume* lv_Tet = new G4LogicalVolume(sol_Tet, mat_Tet, "lv_Tet");
-//		G4PVPlacement* pv_Tet = new G4PVPlacement(0, G4ThreeVector(), lv_Tet, "pv_Tet",
-//												  container_logic, tetData->GetMaterialIndex(i), false);
-//
-//		if (tetData->GetMaterialIndex(i) == 126)
-//			scoringPV.push_back(pv_Tet);
+
+		if (tetData->GetMaterialIndex(i) == 126) {
+			continue;
+		} else {
+			G4PVPlacement* pv_Tet = new G4PVPlacement(0, G4ThreeVector(), lv_Tet, "pv_Tet",
+													  container_logic, false, tetData->GetMaterialIndex(i));
+		}
+
+
 	}
 
 }
@@ -130,8 +169,8 @@ void DetectorConstruction::ConstructSDandField()
 	MFDet->RegisterPrimitive(new G4PSEnergyDeposit("eDep"));
 	G4SDManager::GetSDMpointer()->AddNewDetector(MFDet);
 
-//	for (auto itr:scoringPV)
-//		SetSensitiveDetector(itr->GetLogicalVolume(), MFDet);
+	for (auto itr:scoringPV)
+		SetSensitiveDetector(itr->GetLogicalVolume(), MFDet);
 }
 
 void DetectorConstruction::PrintPhantomInformation()
@@ -145,4 +184,3 @@ void DetectorConstruction::PrintPhantomInformation()
 	G4cout<<"   Phantom box position (max) "<<phantomBoxMax.x()<<" mm, "<<phantomBoxMax.y()<<" mm, "<<phantomBoxMax.z()<<" mm"<<G4endl;
 	G4cout<<"   Number of tetrahedrons     "<<nOfTetrahedrons<<G4endl<<G4endl;
 }
-
