@@ -27,6 +27,9 @@ class CarmTracking
         G4ThreeVector GetTranslationMatrix(G4int frameNo)  { return transVec[frameNo]; }
         G4ThreeVector GetIsocenterPosition(G4int frameNo)  { return isocenterVec[frameNo]; }
         G4ThreeVector GetSourcePosition(G4int frameNo)     { return sourceVec[frameNo]; }
+        G4ThreeVector GetRotMColumn1(G4int frameNo)        { return rot_col1[frameNo]; }
+        G4ThreeVector GetRotMColumn2(G4int frameNo)        { return rot_col2[frameNo]; }
+        G4ThreeVector GetRotMColumn3(G4int frameNo)        { return rot_col3[frameNo]; }
         
     private:
         vector<G4int>             frameVec;
@@ -36,6 +39,10 @@ class CarmTracking
         vector<G4ThreeVector>     isocenterVec;
         vector<G4ThreeVector>     sourceVec;
         
+        vector<G4ThreeVector>     rot_col1;
+        vector<G4ThreeVector>     rot_col2;
+        vector<G4ThreeVector>     rot_col3;
+
         
 };
 

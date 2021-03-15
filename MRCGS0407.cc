@@ -124,7 +124,7 @@ int main(int argc,char** argv)
 
   // Set mandatory initialization classes
   //
-  runManager->SetUserInitialization(new DetectorConstruction(tetData));
+  runManager->SetUserInitialization(new DetectorConstruction(tetData, carm));
   G4VModularPhysicsList* physicsList = new FTFP_BERT;
   physicsList->RegisterPhysics(new G4StepLimiterPhysics());
   runManager->SetUserInitialization(physicsList);

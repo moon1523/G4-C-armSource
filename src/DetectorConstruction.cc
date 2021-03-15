@@ -31,19 +31,32 @@
 
 using namespace std;
 
-DetectorConstruction::DetectorConstruction(TETModelImport* _tetData)
-:worldPhysical(0), container_logic(0), tetData(_tetData), tetLogic(0)
+DetectorConstruction::DetectorConstruction(TETModelImport* _tetData, CarmTracking* _carm)
+:worldLogical(0) ,worldPhysical(0), container_logic(0), tetData(_tetData),
+ carm(_carm), tetLogic(0), frameNo(0),
+ lv_DAP(0), pv_DAP(0),
+ lv_pic(0), pv_pic(0),
+ a(30*cm * tan(11*deg))
 {
+	G4cout << "DetectorConstruction() !!!" << G4endl;
 	// initialisation of the variables for phantom information
 	phantomSize     = tetData -> GetPhantomSize();
 	phantomBoxMin   = tetData -> GetPhantomBoxMin();
 	phantomBoxMax   = tetData -> GetPhantomBoxMax();
 	nOfTetrahedrons = tetData -> GetNumTetrahedron();
+
+	fMessenger = new PrimaryMessenger(this);
+	rot_DAP = new G4RotationMatrix();
 }
 
 DetectorConstruction::~DetectorConstruction()
 {
 	delete tetData;
+	delete fMessenger;
+	delete rot_DAP;
+	delete carm;
+	delete pv_DAP;
+	G4cout << "~DetectorConstruction() !!!" << G4endl;
 }
 
 G4VPhysicalVolume* DetectorConstruction::Construct()
@@ -60,12 +73,12 @@ void DetectorConstruction::SetupWorldGeometry()
 	// Define the world box (size: 10*10*10 m3)
 	//
 	G4double worldXYZ = 10. * m;
-	G4Material* vacuum = G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic");
+	G4Material* vacuum = G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR");
 
 	G4VSolid* worldSolid
 	  = new G4Box("worldSolid", worldXYZ/2, worldXYZ/2, worldXYZ/2);
 
-	G4LogicalVolume* worldLogical
+	worldLogical
 	  = new G4LogicalVolume(worldSolid,vacuum,"worldLogical");
 
 	worldPhysical
@@ -83,6 +96,10 @@ void DetectorConstruction::SetupWorldGeometry()
 										            phantomSize.z()/2 + 1.*cm);
 
 	container_logic = new G4LogicalVolume(containerSolid, vacuum, "phantomLogical");
+	G4VisAttributes* container_vis = new G4VisAttributes(G4Colour(1.0,1.0,1.0));
+	container_vis->SetForceWireframe(true);
+	container_logic->SetVisAttributes(container_vis);
+
 
 	G4RotationMatrix* rotM = new G4RotationMatrix();
 	rotM->rotateY(192.6*deg);
@@ -90,33 +107,27 @@ void DetectorConstruction::SetupWorldGeometry()
 			          worldLogical, false, 0);
 	container_logic->SetOptimisation(TRUE);
 	container_logic->SetSmartless( 0.5 ); // for optimization (default=2)
-//	container_logic->SetVisAttributes(new G4VisAttributes(G4Colour(1., 1., 1., 0.)));
+
+	G4Box* sol_DAP = new G4Box("DAP_meter", a, a, 0.5*1/a);
+	lv_DAP = new G4LogicalVolume(sol_DAP, vacuum, "lv_DAP");
+	lv_DAP->SetVisAttributes(G4Colour(1.,1.,0.));
+	pv_DAP = new G4PVPlacement(0, G4ThreeVector(0,0,-810*mm), lv_DAP, "pv_DAP", worldLogical, false, 1000);
+//	scoringPV.push_back(pv_DAP);
 }
 
 void DetectorConstruction::ConstructPhantom()
 {
-	// Define the tetrahedral mesh phantom as a parameterised geometry
-	//
-	// solid and logical volume to be used for parameterised geometry
-//	G4VSolid* tetraSolid = new G4Tet("TetSolid",
-//			                    G4ThreeVector(),
-//			                    G4ThreeVector(1.*cm,0,0),
-//			                    G4ThreeVector(0,1.*cm,0),
-//			                    G4ThreeVector(0,0,1.*cm));
-//
-//	G4Material* vacuum = G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic");
-//	tetLogic = new G4LogicalVolume(tetraSolid, vacuum, "TetLogic");
-//
-//	// physical volume (phantom) constructed as parameterised geometry
-//	new G4PVParameterised("wholePhantom",tetLogic,container_logic,
-//			              kUndefined,tetData->GetNumTetrahedron(),
-//						  new TETParameterisation(tetData));
+//	// View
+//	G4Material* water = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+//	lv_pic = new G4LogicalVolume(tetData->GetPicTess(), water, "lv_pic");
+//	lv_pic->SetVisAttributes(new G4VisAttributes(G4Colour(1.000000, 0.752941, 0.627451)));
+//	new G4PVPlacement(0, G4ThreeVector(), lv_pic, "pv_pic", container_logic, false, 999);
 
+	// Skin 50-100 um ( 3 Tet in 1 Facet Layer )
 	vector<vector<G4int>> innerFaces = tetData->GetInnerFaces();
 	vector<vector<G4int>> outerFaces = tetData->GetOuterFaces();
-	G4ThreeVector center = (tetData->GetPhantomBoxMax() + tetData->GetPhantomBoxMin())*0.5;
 	G4int skinCount(0);
-
+	G4ThreeVector center = (tetData->GetPhantomBoxMax() + tetData->GetPhantomBoxMin())*0.5;
 	for (int i=0;i<innerFaces.size();i++) {
 		G4VSolid* skin_Tet1 = new G4Tet("SkinTet1_Solid",
 										tetData->GetAVertex(outerFaces[skinCount][0])-center,
@@ -146,6 +157,7 @@ void DetectorConstruction::ConstructPhantom()
 		skinCount++;
 	}
 
+	// Phantom
 	for (G4int i=0; i<tetData->GetNumTetrahedron(); i++) {
 		G4Material* mat_Tet = tetData->GetMaterial(tetData->GetMaterialIndex(i));
 		G4VSolid* sol_Tet = tetData->GetTetrahedron(i);
@@ -154,13 +166,10 @@ void DetectorConstruction::ConstructPhantom()
 		if (tetData->GetMaterialIndex(i) == 126) {
 			continue;
 		} else {
-			G4PVPlacement* pv_Tet = new G4PVPlacement(0, G4ThreeVector(), lv_Tet, "pv_Tet",
+			new G4PVPlacement(0, G4ThreeVector(), lv_Tet, "pv_Tet",
 													  container_logic, false, tetData->GetMaterialIndex(i));
 		}
-
-
 	}
-
 }
 
 void DetectorConstruction::ConstructSDandField()
@@ -171,6 +180,10 @@ void DetectorConstruction::ConstructSDandField()
 
 	for (auto itr:scoringPV)
 		SetSensitiveDetector(itr->GetLogicalVolume(), MFDet);
+	// DAP meter
+	SetSensitiveDetector(lv_DAP, MFDet);
+
+	G4cout << "SCORING SIZE:" << scoringPV.size() << G4endl;
 }
 
 void DetectorConstruction::PrintPhantomInformation()

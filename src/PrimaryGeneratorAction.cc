@@ -35,7 +35,7 @@ PrimaryGeneratorAction::PrimaryGeneratorAction(CarmTracking* _carm)
 	fPrimary = new G4ParticleGun();
 	fMessenger = new PrimaryMessenger(this);
 	source = G4ThreeVector(0,0,-810) * mm;
-	cosTheta = cos(30*deg);
+	cosTheta = cos(22*deg);
 	fPrimary->SetParticlePosition(rot * source);
 	carm = _carm;
 }
@@ -50,11 +50,11 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
 	if(isFirst) {
 		SetSourceEnergy();
-		SetSource(carm->GetRotationMatrix(frameNo), carm->GetTranslationMatrix(frameNo));
+//		SetSource(carm->GetRotationMatrix(frameNo), carm->GetTranslationMatrix(frameNo));
 		isFirst = false;
 	}
 
-	double rand_energy = G4UniformRand();
+	G4double rand_energy = G4UniformRand();
 
 	if (rand_energy == 1)	rand_energy = pdf_sort.rbegin()->second;
 	else {
@@ -67,7 +67,8 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 	}
 
 	fPrimary->SetParticleEnergy(rand_energy*keV);
-	fPrimary->SetParticleMomentumDirection(SampleADirection());
+//	fPrimary->SetParticleMomentumDirection(SampleADirection());
+	fPrimary->SetParticleMomentumDirection(SampleRectangularBeamDirection());
 	fPrimary->GeneratePrimaryVertex(anEvent);
 }
 
@@ -75,18 +76,15 @@ void PrimaryGeneratorAction::SetSourceEnergy()
 {
 	G4String fileName;
 	fileName = "E" + to_string(peak_energy) + "_Al" + to_string(filter_thickness).substr(0,3) + ".spec";
-	G4String spectra_folder = "./spectra/";
+	G4String spectra = "./spectra/" + fileName;
+	G4cout << spectra << G4endl;
+	std::ifstream ifs(spectra);
+	if(!ifs.is_open()) { G4cerr << "X-ray spectra file was not opened" << G4endl; exit(1); }
 
-	spectra_folder += fileName;
-	G4cout << spectra_folder << G4endl;
-	std::ifstream ifs(spectra_folder);
-	if(!ifs.is_open())
-		G4cout << "X-ray spectra file was not opened" << G4endl;
+	G4double energy(0);
+	G4double intensity(0);
 
-	double energy(0);
-	double intensity(0);
-
-	double sum(0);
+	G4double sum(0);
 	while(!ifs.eof()) {
 		ifs >> energy >> intensity;
 		sum += energy * intensity;
@@ -98,11 +96,26 @@ void PrimaryGeneratorAction::SetSourceEnergy()
 		pdf_sort[itr.second] = itr.first;
 	}
 
-	double cdf(0);
+	G4double cdf(0);
 	for (auto itr : pdf_sort) {
 		cdf += itr.first;
 		cdf_sort.insert(make_pair(cdf, itr.second));
 	}
 
 	ifs.close();
+}
+
+G4ThreeVector PrimaryGeneratorAction::SampleRectangularBeamDirection()
+{
+	G4ThreeVector ref(0,0,0);
+	G4ThreeVector centerVec = ref - source;
+	G4double a = fabs(centerVec.z()) * tan(11*deg);
+	G4double rand1 = G4UniformRand();
+	G4double rand2 = G4UniformRand();
+	G4double x = 2*a*rand1 - a;
+	G4double y = 2*a*rand2 - a;
+	G4double z = centerVec.z();
+	G4ThreeVector rec_source(x,y,z);
+
+	return rot * rec_source;
 }

@@ -48,6 +48,8 @@
 #include "G4NistManager.hh"
 #include "G4Material.hh"
 #include "G4Colour.hh"
+#include "G4TessellatedSolid.hh"
+#include "G4TriangularFacet.hh"
 
 // *********************************************************************
 // This class is to import the phantom data from *.ele, *.node, and
@@ -120,6 +122,7 @@ public:
 	std::vector<G4int> GetOuterNodes() { return outerNodes; }
 	G4int GetSkinVertexSize() { return outerVec.size(); }
 	G4int GetSkinFaceSize() { return outerFaces.size(); }
+	G4TessellatedSolid* GetPicTess() { return pictess; }
 
 
 
@@ -186,6 +189,9 @@ private:
 	std::vector<std::vector<G4int>> outerFaces;
 	std::vector<std::vector<G4int>> innerOgFaces;
 	std::vector<std::vector<G4int>> outerOgFaces;
+
+	// To view skin phantom
+	G4TessellatedSolid* pictess;
 
 };
 

@@ -39,13 +39,18 @@ void CarmTracking::ReadTrackingResults(string fileName)
                  >> e >> f >> g >> h
                  >> i >> j >> k >> l
                  >> m >> n >> o >> p;
+
             G4ThreeVector rot1(a,e,i); G4ThreeVector rot2(b,f,j); G4ThreeVector rot3(c,g,k);
-            rotVec.push_back(G4RotationMatrix(rot1, rot2, rot3));
-            transVec.push_back(G4ThreeVector(d,h,l));
+
+			rotVec.push_back(G4RotationMatrix(rot1, rot2, rot3));
+			rot_col1.push_back(rot1);
+			rot_col2.push_back(rot2);
+			rot_col3.push_back(rot3);
         }
         if (dump == "Isocenter") { 
             ss >> isocenter; 
-            isocenterVec.push_back(isocenter); 
+            isocenterVec.push_back(isocenter);
+			transVec.push_back(isocenter);
         }
         if (dump == "Source")    { 
             ss >> source;    

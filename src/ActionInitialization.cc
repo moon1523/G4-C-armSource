@@ -30,8 +30,6 @@
 #include "ActionInitialization.hh"
 #include "PrimaryGeneratorAction.hh"
 #include "RunAction.hh"
-#include "EventAction.hh"
-
 
 ActionInitialization::ActionInitialization(TETModelImport* _tetData, CarmTracking* _carm)
  : G4VUserActionInitialization(), tetData(_tetData), carm(_carm)

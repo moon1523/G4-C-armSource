@@ -37,6 +37,7 @@
 #include "G4UIdirectory.hh"
 
 #include "G4RunManager.hh"
+#include "DetectorConstruction.hh"
 #include "PrimaryGeneratorAction.hh"
 #include "G4ParticleGun.hh"
 #include "RunAction.hh"
@@ -50,22 +51,28 @@
 #include <vector>
 
 class PrimaryGeneratorAction;
+class DetectorConstruction;
 
 class PrimaryMessenger: public G4UImessenger
 {
 public:
 	PrimaryMessenger(PrimaryGeneratorAction* primary);
+	PrimaryMessenger(DetectorConstruction* detector);
 	virtual ~PrimaryMessenger();
 
 	virtual void SetNewValue(G4UIcommand* command, G4String newValue);
 
 private:
 	PrimaryGeneratorAction*      fPrimary;
+	DetectorConstruction*        fDetector;
     
     G4UIdirectory*               fSourceDef;
     G4UIcmdWithAnInteger*        fsrc_frame;
     G4UIcmdWithAnInteger*        fsrc_energy;
     G4UIcmdWithADouble*          fsrc_filter;
+
+    G4UIdirectory*               fDetectorDef;
+	G4UIcmdWithAnInteger*        fdet_frame;
 };
 
 #endif

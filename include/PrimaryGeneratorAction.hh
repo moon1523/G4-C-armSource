@@ -58,6 +58,13 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 
     void SetAngle(G4double angle)             { cosTheta = cos(angle); }
     void SetDefaultSource(G4ThreeVector pos)  { source = pos; }
+
+    void SetSource() {
+    	rot = carm->GetRotationMatrix(frameNo);
+    	G4ThreeVector trans = carm->GetTranslationMatrix(frameNo);
+    	fPrimary->SetParticlePosition(rot*source + trans);
+    }
+
     void SetSource(G4RotationMatrix _rot, G4ThreeVector trans) {
         rot = _rot;
         fPrimary->SetParticlePosition(rot*source + trans);
@@ -65,6 +72,7 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
     G4ThreeVector SampleADirection(){
         return rot*G4RandomDirection(cosTheta);
     }
+    G4ThreeVector SampleRectangularBeamDirection();
 
     void  SetPeakEnergy(G4int _peak_energy) { peak_energy      = _peak_energy;      }
     void  SetFilterThickness(G4double _filter_thickness) { filter_thickness = _filter_thickness; }

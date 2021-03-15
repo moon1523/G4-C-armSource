@@ -49,11 +49,13 @@
 #include "G4MultiFunctionalDetector.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4VisAttributes.hh"
-
+#include "G4GeometryManager.hh"
 
 #include "TETModelImport.hh"
-#include "TETParameterisation.hh"
-#include "PSEnergyDeposit.hh"
+#include "G4PSEnergyDeposit.hh"
+#include "CarmTracking.hh"
+#include "PrimaryMessenger.hh"
+
 
 // *********************************************************************
 // This is UserDetectorConstruction class that defines geometry
@@ -70,35 +72,79 @@
 //                         geometry
 // *********************************************************************
 
+
+class PrimaryMessenger;
+class DetectorConstruction;
+
 class DetectorConstruction : public G4VUserDetectorConstruction
 {
   public:
-    DetectorConstruction(TETModelImport* tetData);
+    DetectorConstruction(TETModelImport* tetData, CarmTracking* carm);
     virtual ~DetectorConstruction();
 
     virtual G4VPhysicalVolume* Construct();
     virtual void ConstructSDandField();
 
     std::vector<G4VPhysicalVolume*> GetScoringPV() const { return scoringPV; }
-    std::map<G4int, G4VPhysicalVolume*> GetSkinPVMap() const { return skinpvMap; }
+    G4double GetDAParea() const { return 4*a*a; }
+
+    void SetDAPMeter() {
+    	G4cout << "FrameNo: " << frameNo << G4endl;
+    	G4RotationMatrix rot = carm->GetRotationMatrix(frameNo);
+    	G4ThreeVector trans = carm->GetTranslationMatrix(frameNo);
+    	transform_DAP = G4Transform3D(rot, trans);
+
+    	G4cout << transform_DAP.getRotation() << G4endl;
+    	G4cout << transform_DAP.getTranslation() << G4endl;
+
+    	if (pv_DAP) {
+    		G4GeometryManager::GetInstance()->OpenGeometry();
+    		delete pv_DAP;
+    		pv_DAP = new G4PVPlacement(transform_DAP, lv_DAP, "pv_DAP", worldLogical, false, 1000);
+    		pv_DAP->SetTranslation(carm->GetRotationMatrix(frameNo)*G4ThreeVector(0,0,-510)+carm->GetTranslationMatrix(frameNo));
+    		G4RunManager::GetRunManager()->GeometryHasBeenModified();
+    	}
+
+//    	G4ThreeVector rot1 = carm->GetRotMColumn1(frameNo);
+//    	G4ThreeVector rot2 = carm->GetRotMColumn2(frameNo);
+//    	G4ThreeVector rot3 = carm->GetRotMColumn3(frameNo);
+//    	rot_DAP->set(rot1,rot2,rot3);
+//    	rot_DAP->rotateY(90*deg);
+//    	pv_DAP->SetRotation(rot_DAP);
+//    	pv_DAP->SetTranslation(carm->GetRotationMatrix(frameNo)*G4ThreeVector(0,0,-510)+carm->GetTranslationMatrix(frameNo));
+//    	G4RunManager::GetRunManager()->GeometryHasBeenModified();
+    }
+    void SetFrameNo(G4int _frameNo) { frameNo = _frameNo; }
 
   private:
     void SetupWorldGeometry();
 	void ConstructPhantom();
 	void PrintPhantomInformation();
 
+	G4LogicalVolume*   worldLogical;
 	G4VPhysicalVolume* worldPhysical;
 	G4LogicalVolume*   container_logic;
 
 	TETModelImport*    tetData;
+	CarmTracking*      carm;
+	PrimaryMessenger*  fMessenger;
+
 	G4ThreeVector      phantomSize;
 	G4ThreeVector      phantomBoxMin, phantomBoxMax;
 	G4int              nOfTetrahedrons;
 
 	G4LogicalVolume*   tetLogic;
-	std::vector<G4LogicalVolume*>   scoringLV;
 	std::vector<G4VPhysicalVolume*> scoringPV;
-	std::map<G4int, G4VPhysicalVolume*> skinpvMap;
+
+	G4int frameNo;
+	G4double a;
+	G4LogicalVolume* lv_DAP;
+	G4PVPlacement* pv_DAP;
+	G4RotationMatrix* rot_DAP;
+	G4Transform3D transform_DAP;
+
+	G4LogicalVolume* lv_pic;
+	G4VPhysicalVolume* pv_pic;
 
 };
 

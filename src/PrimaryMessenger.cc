@@ -28,8 +28,9 @@
 #include "PrimaryMessenger.hh"
 
 PrimaryMessenger::PrimaryMessenger(PrimaryGeneratorAction* _primary)
-:G4UImessenger(), fPrimary(_primary)
+:G4UImessenger(), fPrimary(_primary), fDetector(0), fDetectorDef(0), fdet_frame(0)
 {
+	G4cout << "PrimaryMessenger()" << G4endl;
 	fSourceDef = new G4UIdirectory("/source/");
 
 	fsrc_frame     = new G4UIcmdWithAnInteger("/source/frame", this);
@@ -38,16 +39,31 @@ PrimaryMessenger::PrimaryMessenger(PrimaryGeneratorAction* _primary)
 	
 }
 
+PrimaryMessenger::PrimaryMessenger(DetectorConstruction* _detector)
+:G4UImessenger(), fPrimary(0), fDetector(_detector), fSourceDef(0), fsrc_frame(0), fsrc_energy(0), fsrc_filter(0)
+{
+	G4cout << "~PrimaryMessenger()" << G4endl;
+	fDetectorDef = new G4UIdirectory("/detector/");
+	fdet_frame = new G4UIcmdWithAnInteger("/detector/frame", this);
+}
+
 PrimaryMessenger::~PrimaryMessenger() {
 	delete fSourceDef;
 	delete fsrc_frame;
 	delete fsrc_energy;
 	delete fsrc_filter;
+
+	delete fDetectorDef;
+	delete fdet_frame;
 }
 
 void PrimaryMessenger::SetNewValue(G4UIcommand* command, G4String newValue)
 {
-		 if(command == fsrc_frame )     fPrimary->SetFrameNo(fsrc_frame->GetNewIntValue(newValue));
-	else if(command == fsrc_energy)	    fPrimary->SetPeakEnergy(fsrc_energy->GetNewIntValue(newValue));
-	else if(command == fsrc_filter)     fPrimary->SetFilterThickness(fsrc_filter->GetNewDoubleValue(newValue));
+		 if(command == fsrc_frame )	 	{ fPrimary->SetFrameNo(fsrc_frame->GetNewIntValue(newValue));
+		 	 	 	 	 	 	 	 	  fPrimary->SetSource(); }
+	else if(command == fsrc_energy)	    { fPrimary->SetPeakEnergy(fsrc_energy->GetNewIntValue(newValue));
+		 	 	 	 	 	 	 	 	  fPrimary->SetSourceEnergy(); }
+	else if(command == fsrc_filter)       fPrimary->SetFilterThickness(fsrc_filter->GetNewDoubleValue(newValue));
+	else if(command == fdet_frame)      { fDetector->SetFrameNo(fsrc_frame->GetNewIntValue(newValue));
+			 	 	 	 	 	 	 	  fDetector->SetDAPMeter(); }
 }

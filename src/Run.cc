@@ -34,12 +34,13 @@
 Run::Run(TETModelImport* _tetData)
 :G4Run(), tetData(_tetData), fCollID_skinTet(-1)
 {
+	G4cout << "Run()" << G4endl;
 	fCollID_skinTet = G4SDManager::GetSDMpointer()->GetCollectionID("PhantomSD/eDep");
 }
 
 Run::~Run()
 {
-
+	G4cout << "~Run()" << G4endl;
 }
 
 void Run::RecordEvent(const G4Event* event)
@@ -49,8 +50,6 @@ void Run::RecordEvent(const G4Event* event)
 	G4HCofThisEvent* HCE = event->GetHCofThisEvent();
 	if(!HCE) return;
 
-	//Energy in crystals : identify 'good events'
-	//
 	G4THitsMap<G4double>* evtMap =
 	static_cast<G4THitsMap<G4double>*>(HCE->GetHC(fCollID_skinTet));
 
@@ -62,11 +61,9 @@ void Run::RecordEvent(const G4Event* event)
 		fEdep[itr.first] += edep;
 	}
 
-	std::ofstream ofs("hitsMap.txt",std::ios::app);
 	for(auto itr:hitsMap) {
 		G4double edep = *(itr.second);
 		fEdep[itr.first] += edep;
-		ofs << itr.first << " " << *(itr.second) << " " << edep << G4endl;
 	}
 
 	G4Run::RecordEvent(event);

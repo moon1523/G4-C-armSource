@@ -58,11 +58,8 @@ class RunAction : public G4UserRunAction
     virtual void BeginOfRunAction(const G4Run*);
     virtual void   EndOfRunAction(const G4Run*);
 
-    std::vector<G4double> SkinDoseDistNorm(std::vector<G4double> faceDose);
     void PrintPLY(G4String fileName, std::vector<G4double> vertexWeight);
-
-    std::map<G4int, G4double> SkinDoseDistNorm(std::map<G4int, G4double> dose);
-    void PrintPLY(G4String fileName, std::map<G4int, G4double> doseDist);
+    void PrintSUMPLY(G4String fileName);
 
 
   private:
@@ -84,6 +81,10 @@ class RunAction : public G4UserRunAction
     std::map<G4int, G4String> nameMap;
 
     std::ofstream ofs;
+    std::vector<G4double> vertexDose2WeightMerge;
+
+	std::vector<G4ThreeVector> vertVec;
+    std::vector<std::vector<G4int>> faceVec;
 };
 
 #endif
