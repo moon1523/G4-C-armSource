@@ -65,10 +65,11 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
     	fPrimary->SetParticlePosition(rot*source + trans);
     }
 
-    void SetSource(G4RotationMatrix _rot, G4ThreeVector trans) {
-        rot = _rot;
-        fPrimary->SetParticlePosition(rot*source + trans);
-    }
+//    void SetSource(G4RotationMatrix _rot, G4ThreeVector trans) {
+//        rot = _rot;
+//        fPrimary->SetParticlePosition(rot*source + trans);
+//    }
+
     G4ThreeVector SampleADirection(){
         return rot*G4RandomDirection(cosTheta);
     }
@@ -81,7 +82,14 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
     void          SetSourceEnergy();
     G4ThreeVector SetSourcePosition();
 
-    G4ParticleGun* GetParticleGun()    const { return fPrimary; }
+    G4ParticleGun* GetParticleGun()     const { return fPrimary; }
+    G4double       GetEIntensity()      const { return eIntensity; }
+
+    G4bool         GetMonitorPower()    const { return monitorPower; }
+    G4double       GetMonitorTime()     const { return monitorTime;  }
+    G4double       GetMonitorDAP()      const { return monitorDAP;   }
+    G4int          GetTubeVoltage()     const { return tubeVoltage;  }
+    G4double       GetTubeCurrent()     const { return tubeCurrent;  }
 
   private:
     G4ParticleGun*    fPrimary;
@@ -94,9 +102,16 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
     map<G4double, G4double> pdf;
     map<G4double, G4double, greater<G4double>> pdf_sort;
     map<G4double, G4double> cdf_sort;
+    G4double eIntensity;
 
     G4int peak_energy;
 	G4double filter_thickness;
+
+	G4bool   monitorPower;
+	G4double monitorTime;
+	G4double monitorDAP;
+	G4int    tubeVoltage;
+	G4double tubeCurrent;
 
     CarmTracking* carm;
 	G4bool isFirst;

@@ -86,16 +86,18 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     virtual void ConstructSDandField();
 
     std::vector<G4VPhysicalVolume*> GetScoringPV() const { return scoringPV; }
-    G4double GetDAParea() const { return 4*a*a; }
+    G4double GetDAParea() const { return 4*a*b; }
+    G4LogicalVolume* GetDAPLogicalVolume() const { return lv_DAP; }
+    G4VPhysicalVolume* GetDAPPhysicalVolume() const { return pv_DAP; }
 
     void SetDAPMeter() {
-    	G4cout << "FrameNo: " << frameNo << G4endl;
+//    	G4cout << "FrameNo: " << frameNo << G4endl;
     	G4RotationMatrix rot = carm->GetRotationMatrix(frameNo);
     	G4ThreeVector trans = carm->GetTranslationMatrix(frameNo);
     	transform_DAP = G4Transform3D(rot, trans);
 
-    	G4cout << transform_DAP.getRotation() << G4endl;
-    	G4cout << transform_DAP.getTranslation() << G4endl;
+//    	G4cout << transform_DAP.getRotation() << G4endl;
+//    	G4cout << transform_DAP.getTranslation() << G4endl;
 
     	if (pv_DAP) {
     		G4GeometryManager::GetInstance()->OpenGeometry();
@@ -115,6 +117,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
 //    	G4RunManager::GetRunManager()->GeometryHasBeenModified();
     }
     void SetFrameNo(G4int _frameNo) { frameNo = _frameNo; }
+    G4int GetFrameNo() const { return frameNo; }
 
   private:
     void SetupWorldGeometry();
@@ -137,14 +140,14 @@ class DetectorConstruction : public G4VUserDetectorConstruction
 	std::vector<G4VPhysicalVolume*> scoringPV;
 
 	G4int frameNo;
-	G4double a;
+	G4double a, b;
 	G4LogicalVolume* lv_DAP;
-	G4PVPlacement* pv_DAP;
+	G4VPhysicalVolume* pv_DAP;
 	G4RotationMatrix* rot_DAP;
 	G4Transform3D transform_DAP;
 
 	G4LogicalVolume* lv_pic;
-	G4VPhysicalVolume* pv_pic;
+//	G4VPhysicalVolume* pv_pic;
 
 };
 

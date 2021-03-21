@@ -9,17 +9,27 @@
 /run/initialize
 
 /gun/particle  gamma
-/source/energy 80
-/source/filter 0.2
+#/source/energy  62
+#/source/filter 1.0
 
 /detector/frame 0
-/source/frame   0 
+/source/frame   0
 /run/beamOn     1000000
 
-/detector/frame 1
-/source/frame   1
+/detector/frame 10
+/source/frame   10
 /run/beamOn     1000000
 
-/detector/frame 9
-/source/frame   9
+/detector/frame 21
+/source/frame   21
 /run/beamOn     1000000
+
+/detector/frame 41
+/source/frame   41
+/run/beamOn     1000000
+
+/detector/frame 46
+/source/frame   46
+/run/beamOn     1000000
+
+

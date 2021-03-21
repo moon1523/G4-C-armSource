@@ -36,11 +36,12 @@
 #include "PrimaryGeneratorAction.hh"
 #include "G4RunManager.hh"
 #include "Run.hh"
+#include "G4Timer.hh"
 
 #include <fstream>
 
 
-class G4Run;
+class Run;
 
 /// Run action class
 ///
@@ -51,7 +52,7 @@ class G4Run;
 class RunAction : public G4UserRunAction
 {
   public:
-    RunAction(TETModelImport* _tetData);
+    RunAction(TETModelImport* _tetData, G4String _output, G4Timer* initTimer);
     virtual ~RunAction();
 
     virtual G4Run* GenerateRun();
@@ -59,32 +60,38 @@ class RunAction : public G4UserRunAction
     virtual void   EndOfRunAction(const G4Run*);
 
     void PrintPLY(G4String fileName, std::vector<G4double> vertexWeight);
-    void PrintSUMPLY(G4String fileName);
+
 
 
   private:
     TETModelImport* tetData;
-    Run*            fRun;
-    G4int           numOfEvent;
-    G4int           runID;
     G4String        outputFile;
+    G4Timer*        initTimer;
+    G4Timer*        runTimer;
 
-    G4String primaryParticle;
-    G4String primarySourceName;
-    G4double primaryEnergy;
-    G4double beamArea;
+    Run*            fRun;
+    G4int 			numOfEvent;
+
+    G4bool          monitorPower;
+    G4double        monitorTime;
+    G4double        monitorDAP;
+    G4int           tubeVoltage;
+    G4double        tubeCurrent;
+    G4double        eIntensity;
 
 
-    std::map<G4int, G4double> massMap;
-    std::map<G4int, std::pair<G4int, G4double>> massMap2;
-    std::map<G4int, std::pair<G4double,G4double>> doses;
-    std::map<G4int, G4String> nameMap;
+    G4double   ratioDAP;
+    map<G4int, G4double> massMap;
+    map<G4int, pair<G4double,G4double>> doses;
+    map<G4int, pair<G4double,G4double>> dosesRunSum;
 
-    std::ofstream ofs;
-    std::vector<G4double> vertexDose2WeightMerge;
+    ofstream ofs;
+    vector<G4double> vertexDose2WeightMerge;
 
-	std::vector<G4ThreeVector> vertVec;
-    std::vector<std::vector<G4int>> faceVec;
+	vector<G4ThreeVector> vertVec;
+    vector<vector<G4int>> faceVec;
+
+
 };
 
 #endif

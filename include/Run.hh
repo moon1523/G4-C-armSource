@@ -36,6 +36,7 @@
 #include "G4THitsMap.hh"
 #include "G4SDManager.hh"
 #include "TETModelImport.hh"
+#include "PrimaryGeneratorAction.hh"
 
 
 class Run : public G4Run
@@ -47,12 +48,41 @@ public:
 	virtual void RecordEvent(const G4Event*);
 	virtual void Merge(const G4Run*);
 
-	std::map<G4int, G4double> GetfEdep() const { return fEdep; }
+	map<G4int, pair<G4double, G4double>> GetEdepMap() const { return edepMap; }
+
+	G4double GetEIntensty()    { return eIntensity;   }
+	G4bool   GetMonitorPower() { return monitorPower; }
+	G4double GetMonitorTime()  { return monitorTime;  }
+	G4double GetMonitorDAP()   { return monitorDAP;   }
+	G4int    GetTubeVoltage()  { return tubeVoltage;  }
+	G4double GetTubeCurrent()  { return tubeCurrent;  }
+
+
+	void SetPrimary(G4double _eIntensity,
+			G4bool _monitorPower, G4double _monitorTime, G4double _monitorDAP,
+			G4int _tubeVoltage, G4double _tubeCurrent)
+	{
+		eIntensity = _eIntensity;
+
+		monitorPower = _monitorPower;
+		monitorTime  = _monitorTime;
+		monitorDAP   = _monitorDAP;
+		tubeVoltage  = _tubeVoltage;
+		tubeCurrent  = _tubeCurrent;
+	}
 
 private:
 	TETModelImport* tetData;
-	G4int fCollID_skinTet;
-	std::map<G4int, G4double> fEdep;
+	G4int 			fCollID_skinTet;
+	map<G4int, pair<G4double, G4double>> edepMap;
+
+	G4double eIntensity;
+
+	G4bool   monitorPower;
+	G4double monitorTime;
+	G4double monitorDAP;
+	G4int    tubeVoltage;
+	G4double tubeCurrent;
 };
 #endif
 

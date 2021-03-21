@@ -33,18 +33,22 @@
 #include "CarmTracking.hh"
 /// Action initialization class.
 
+//class PrimaryGeneratorAction;
+
 class ActionInitialization : public G4VUserActionInitialization
 {
   public:
-    ActionInitialization(TETModelImport* _tetData,CarmTracking* _carm);
+    ActionInitialization(TETModelImport* _tetData, CarmTracking* _carm, G4String outputFileName, G4Timer* initTimer);
     virtual ~ActionInitialization();
 
     virtual void BuildForMaster() const;
     virtual void Build() const;
 
   private:
-    CarmTracking* carm;
     TETModelImport* tetData;
+    CarmTracking*   carm;
+    G4String        output;
+    G4Timer*        initTimer;
 };
 
 #endif

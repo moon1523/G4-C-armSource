@@ -26,6 +26,9 @@ void CarmTracking::ReadTrackingResults(string fileName)
                  i,j,k,l,
                  m,n,o,p;
         G4ThreeVector isocenter, source;
+        G4bool  power;
+        G4double time;
+        G4double rateDAP, tubeCurrent; G4int tubeVoltage;
         if (dump == "Frame")     {
             ss >> frameNo;
             frameVec.push_back(frameNo);
@@ -55,6 +58,26 @@ void CarmTracking::ReadTrackingResults(string fileName)
         if (dump == "Source")    { 
             ss >> source;    
             sourceVec.push_back(source); 
+        }
+        if (dump == "Power") {
+        	ss >> power;
+        	monitorPowerVec.push_back(power);
+        }
+        if (dump == "Time") {
+        	ss >> time;
+        	monitorTimeVec.push_back(time);
+        }
+        if (dump == "DAP_rate") {
+        	ss >> rateDAP;
+        	monitorDAPVec.push_back(rateDAP);
+        }
+        if (dump == "T_Voltage") {
+        	ss >> tubeVoltage;
+        	tubeVoltageVec.push_back(tubeVoltage);
+        }
+        if (dump == "T_Current") {
+        	ss >> tubeCurrent;
+        	tubeCurrentVec.push_back(tubeCurrent);
         }
     }
     ifs.close();

@@ -58,7 +58,7 @@ void PrintUsage(){
 
 int main(int argc,char** argv)
 {
-  // Read the arguments for batch mode
+	// Read the arguments for batch mode
 	//
     G4Timer* initTimer = new G4Timer;
     initTimer->Start();
@@ -68,7 +68,7 @@ int main(int argc,char** argv)
     G4UIExecutive* ui = 0;
 
 
-  for ( G4int i=1; i<argc; i++ ) {
+	for ( G4int i=1; i<argc; i++ ) {
 		// macro file name
 		if ( G4String(argv[i]) == "-m" ) {
 			macro = argv[i+1];
@@ -90,21 +90,23 @@ int main(int argc,char** argv)
 		}
 	}
 
-  // print usage when there are more than six arguments
+    // print usage when there are more than six arguments
 	if ( argc>7 || phantomName.empty()){
 		PrintUsage();
 		return 1;
 	}
   
-  // Detect interactive mode (if no macro file name) and define UI session
+    // Detect interactive mode (if no macro file name) and define UI session
 	//
 	if ( !macro.size() ) {
 		ui = new G4UIExecutive(argc, argv, "qt");
 //		G4cerr<<"ERROR: Interactive mode is not available. Please provide macro file."<<G4endl;
 //		return 1;
 	}
+	// default output file name
+	else if ( !output.size() ) output = macro + ".out";
 
-  // Choose the Random engine
+    // Choose the Random engine
 	//
 	G4Random::setTheEngine(new CLHEP::RanecuEngine);
 	G4Random::setTheSeed(time(0));
@@ -128,7 +130,7 @@ int main(int argc,char** argv)
   G4VModularPhysicsList* physicsList = new FTFP_BERT;
   physicsList->RegisterPhysics(new G4StepLimiterPhysics());
   runManager->SetUserInitialization(physicsList);
-  runManager->SetUserInitialization(new ActionInitialization(tetData, carm));
+  runManager->SetUserInitialization(new ActionInitialization(tetData, carm, output, initTimer));
   
   
   // Initialize visualization
@@ -154,10 +156,7 @@ int main(int argc,char** argv)
   }
 
   // Job termination
-  // Free the store: user actions, physics_list and detector_description are
-  // owned and deleted by the run manager, so they should not be deleted 
-  // in the main() program !
-  
+  //
   delete visManager;
   delete runManager;
 }

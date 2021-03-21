@@ -35,8 +35,8 @@ DetectorConstruction::DetectorConstruction(TETModelImport* _tetData, CarmTrackin
 :worldLogical(0) ,worldPhysical(0), container_logic(0), tetData(_tetData),
  carm(_carm), tetLogic(0), frameNo(0),
  lv_DAP(0), pv_DAP(0),
- lv_pic(0), pv_pic(0),
- a(30*cm * tan(11*deg))
+ lv_pic(0),
+ a(30*cm * tan(8.216*deg)), b(30*cm * tan(10.565*deg))
 {
 	G4cout << "DetectorConstruction() !!!" << G4endl;
 	// initialisation of the variables for phantom information
@@ -73,13 +73,13 @@ void DetectorConstruction::SetupWorldGeometry()
 	// Define the world box (size: 10*10*10 m3)
 	//
 	G4double worldXYZ = 10. * m;
-	G4Material* vacuum = G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR");
+	G4Material* air = G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR");
 
 	G4VSolid* worldSolid
 	  = new G4Box("worldSolid", worldXYZ/2, worldXYZ/2, worldXYZ/2);
 
 	worldLogical
-	  = new G4LogicalVolume(worldSolid,vacuum,"worldLogical");
+	  = new G4LogicalVolume(worldSolid,air,"worldLogical");
 
 	worldPhysical
 	  = new G4PVPlacement(0,G4ThreeVector(), worldLogical,"worldPhysical", 0, false,0,false);
@@ -95,24 +95,25 @@ void DetectorConstruction::SetupWorldGeometry()
 										            phantomSize.y()/2 + 1.*cm,
 										            phantomSize.z()/2 + 1.*cm);
 
-	container_logic = new G4LogicalVolume(containerSolid, vacuum, "phantomLogical");
+	container_logic = new G4LogicalVolume(containerSolid, air, "phantomLogical");
 	G4VisAttributes* container_vis = new G4VisAttributes(G4Colour(1.0,1.0,1.0));
 	container_vis->SetForceWireframe(true);
 	container_logic->SetVisAttributes(container_vis);
 
 
 	G4RotationMatrix* rotM = new G4RotationMatrix();
-	rotM->rotateY(192.6*deg);
-	new G4PVPlacement(rotM, G4ThreeVector(374.91301*mm,-77.09209*mm,2480.90340*mm), container_logic, "PhantomPhysical",
-			          worldLogical, false, 0);
+	rotM->rotateY(-192.6*deg);
+//	new G4PVPlacement(rotM, G4ThreeVector(374.91301*mm,-77.09209*mm,2480.90340*mm), container_logic, "PhantomPhysical",
+//			          worldLogical, false, 0);
+	new G4PVPlacement(rotM, G4ThreeVector(376.30819*mm,-76.13215*mm,2499.53690*mm), container_logic, "PhantomPhysical",
+					  worldLogical, false, 0);
 	container_logic->SetOptimisation(TRUE);
 	container_logic->SetSmartless( 0.5 ); // for optimization (default=2)
 
-	G4Box* sol_DAP = new G4Box("DAP_meter", a, a, 0.5*1/a);
-	lv_DAP = new G4LogicalVolume(sol_DAP, vacuum, "lv_DAP");
+	G4Box* sol_DAP = new G4Box("DAP_meter", a, b, 0.125*1/(a*b));
+	lv_DAP = new G4LogicalVolume(sol_DAP, air, "lv_DAP");
 	lv_DAP->SetVisAttributes(G4Colour(1.,1.,0.));
 	pv_DAP = new G4PVPlacement(0, G4ThreeVector(0,0,-810*mm), lv_DAP, "pv_DAP", worldLogical, false, 1000);
-//	scoringPV.push_back(pv_DAP);
 }
 
 void DetectorConstruction::ConstructPhantom()
@@ -182,8 +183,6 @@ void DetectorConstruction::ConstructSDandField()
 		SetSensitiveDetector(itr->GetLogicalVolume(), MFDet);
 	// DAP meter
 	SetSensitiveDetector(lv_DAP, MFDet);
-
-	G4cout << "SCORING SIZE:" << scoringPV.size() << G4endl;
 }
 
 void DetectorConstruction::PrintPhantomInformation()
